@@ -1,0 +1,9 @@
+{
+  "name": "Everyday Bible Study",
+  "short_name": "Bible Study",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#FCF9F6",
+  "theme_color": "#E91E63",
+  "description": "Everyday Bible Study Journal"
+}
