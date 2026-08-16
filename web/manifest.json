@@ -1,9 +1,34 @@
 {
-  "name": "Everyday Bible Study",
-  "short_name": "Bible Study",
+  "name": "Bitaniya Bible Study",
+  "short_name": "Bitaniya Bible Study",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#FCF9F6",
   "theme_color": "#E91E63",
-  "description": "Everyday Bible Study Journal"
+  "description": "Bitaniya Bible Study - a daily Bible study journal and New Testament reading tracker.",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/Icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/Icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }
