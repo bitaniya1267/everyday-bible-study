@@ -4,15 +4,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const EverydayBibleStudyApp());
+  runApp(const BitaniyaBibleStudyApp());
 }
 
-class EverydayBibleStudyApp extends StatelessWidget {
-  const EverydayBibleStudyApp({super.key});
+class BitaniyaBibleStudyApp extends StatelessWidget {
+  const BitaniyaBibleStudyApp({super.key});
   @override
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Everyday Bible Study',
+        title: 'Bitaniya Bible Study',
         theme: ThemeData(
           useMaterial3: true,
           scaffoldBackgroundColor: const Color(0xFFFCF9F6),
@@ -80,7 +80,7 @@ class StudyEntry {
 }
 
 class Store {
-  static const key = 'everyday_bible_studies_complete_v1';
+  static const key = 'bitaniya_bible_studies_v2';
   static Future<List<StudyEntry>> load() async {
     final p = await SharedPreferences.getInstance();
     final raw = p.getString(key);
@@ -124,11 +124,11 @@ class _HomePageState extends State<HomePage> {
     if(ok==true){ setState(()=>studies.removeWhere((x)=>x.id==e.id)); await Store.save(studies); }
   }
   @override Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Everyday Bible Study'), backgroundColor: Colors.white, foregroundColor: Colors.brown.shade800),
+    appBar: AppBar(title: const Text('Bitaniya Bible Study'), backgroundColor: Colors.white, foregroundColor: Colors.brown.shade800),
     body: loading ? const Center(child:CircularProgressIndicator()) : ListView(padding: const EdgeInsets.all(16), children: [
       Container(padding: const EdgeInsets.all(22), decoration: BoxDecoration(
         gradient: LinearGradient(colors:[Colors.pink.shade50,Colors.orange.shade50]), borderRadius: BorderRadius.circular(20), border: Border.all(color:Colors.pink.shade100)),
-        child: const Column(children:[Text('📖',style:TextStyle(fontSize:42)), SizedBox(height:6), Text('EVERYDAY BIBLE STUDY',style:TextStyle(fontSize:24,fontWeight:FontWeight.bold,color:Colors.brown)), SizedBox(height:6), Text('A complete daily Bible study journal with all four study formats in one saved page.',textAlign:TextAlign.center,style:TextStyle(color:Colors.black54))])),
+        child: const Column(children:[Text('📖',style:TextStyle(fontSize:42)), SizedBox(height:6), Text('BITANIYA BIBLE STUDY',style:TextStyle(fontSize:24,fontWeight:FontWeight.bold,color:Colors.brown)), SizedBox(height:6), Text('A complete daily Bible study journal with all four study formats in one saved page.',textAlign:TextAlign.center,style:TextStyle(color:Colors.black54))])),
       const SizedBox(height:16), FilledButton.icon(onPressed:_new, icon:const Icon(Icons.add), label:const Padding(padding:EdgeInsets.all(12),child:Text('CREATE NEW DAILY STUDY',style:TextStyle(fontWeight:FontWeight.bold)))),
       const SizedBox(height:24), const Heading('MY DAILY STUDIES'), const SizedBox(height:8),
       if(studies.isEmpty) Container(padding:const EdgeInsets.all(24),decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(14),border:Border.all(color:Colors.grey.shade300)),child:const Column(children:[Icon(Icons.calendar_month_outlined,size:48,color:Colors.grey),SizedBox(height:8),Text('No daily studies yet.',style:TextStyle(fontWeight:FontWeight.bold)),SizedBox(height:4),Text('Create your first study. All four study sections will be saved together.',textAlign:TextAlign.center,style:TextStyle(color:Colors.black54))]))
@@ -137,12 +137,8 @@ class _HomePageState extends State<HomePage> {
         title:Text(e.book.isEmpty?'Bible Study — ${e.date}':'${e.book}${e.chapter.isEmpty?'':' ${e.chapter}'}',style:const TextStyle(fontWeight:FontWeight.bold)),
         subtitle:Text(e.passage.isEmpty?e.date:'${e.date} • ${e.passage}',maxLines:2,overflow:TextOverflow.ellipsis),
         trailing:PopupMenuButton<String>(onSelected:(v){if(v=='open')_edit(e);if(v=='delete')_delete(e);},itemBuilder:(_)=>const[PopupMenuItem(value:'open',child:Text('Open / Edit')),PopupMenuItem(value:'delete',child:Text('Delete'))]), onTap:()=>_edit(e)))) ,
-      const SizedBox(height:24), const Heading('STUDY TOOLS'),
-      ToolCard('Bible Character Study','Standalone character study worksheet.',Icons.person_outline,const CharacterPage()),
-      ToolCard('Chapter Study','Standalone chapter study worksheet.',Icons.menu_book,const ChapterPage()),
-      ToolCard('Quiet Time Notes','Standalone quiet time worksheet.',Icons.spa_outlined,const QuietPage()),
-      ToolCard('Reflection Journal','Standalone reflection worksheet.',Icons.edit_note,const ReflectionPage()),
-      ToolCard('New Testament Reading Tracker','Track every New Testament chapter.',Icons.check_circle_outline,const TrackerPage()),
+      const SizedBox(height:24), const Heading('TOOLS'),
+      ToolCard('New Testament Reading Tracker','Track every New Testament chapter. Progress is saved automatically.',Icons.check_circle_outline,const TrackerPage()),
     ]),
   );
 }
@@ -201,15 +197,171 @@ class Box extends StatelessWidget {final String title;final Widget child;const B
 class Section extends StatelessWidget {final String n,title,sub;final MaterialColor color;final List<Widget> children;const Section(this.n,this.title,this.sub,this.color,this.children,{super.key});@override Widget build(BuildContext c)=>Container(margin:const EdgeInsets.symmetric(vertical:10),padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:color.shade50.withOpacity(.45),border:Border.all(color:color.shade200),borderRadius:BorderRadius.circular(14)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Row(crossAxisAlignment:CrossAxisAlignment.start,children:[CircleAvatar(radius:17,backgroundColor:color.shade100,foregroundColor:color.shade800,child:Text(n,style:const TextStyle(fontWeight:FontWeight.bold))),const SizedBox(width:10),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:TextStyle(fontSize:17,fontWeight:FontWeight.bold,color:color.shade800)),Text(sub,style:const TextStyle(fontSize:12,color:Colors.black54))]))]),const SizedBox(height:12),...children]));}
 class Responsive extends StatelessWidget {final List<Widget> children;const Responsive(this.children,{super.key});@override Widget build(BuildContext c)=>LayoutBuilder(builder:(c,con)=>con.maxWidth<720?Column(children:children):Row(crossAxisAlignment:CrossAxisAlignment.start,children:[Expanded(child:children[0]),const SizedBox(width:12),Expanded(child:children[1])]));}
 
-// Standalone versions of the original worksheets.
-class CharacterPage extends StatelessWidget {const CharacterPage({super.key});@override Widget build(BuildContext c)=>Worksheet('Bible Character Study','Learning from their story. Growing in our faith.',Colors.pink,const ['CHARACTER','KNOWN FOR','BOOK(S)','CHAPTER(S)','TELL THEIR STORY IN YOUR OWN WORDS','TRAITS — What words describe this person?','KEY VERSE(S)','WHAT CAN WE LEARN?','HOW CAN WE APPLY THIS TODAY?','CHALLENGES — Struggles, mistakes, or hard moments','HOW GOD USED THEM','BIGGEST TAKEAWAY','A PRAYER']);}
-class ChapterPage extends StatelessWidget {const ChapterPage({super.key});@override Widget build(BuildContext c)=>Worksheet('Chapter Study','Passage summary, key concepts, and challenges.',Colors.brown,const ['DATE','PASSAGE','AUTHOR','AUDIENCE','SUMMARY','CHARACTERS','KEY CONCEPTS','SOMETHING THAT CHALLENGED ME','A VERSE THAT STOOD OUT']);}
-class QuietPage extends StatelessWidget {const QuietPage({super.key});@override Widget build(BuildContext c)=>Worksheet('Quiet Time Notes','What this says about God, Christ, and humans.',Colors.teal,const ['DATE','TODAY’S PASSAGE','3 THINGS I NOTICED','3 THINGS TO REMEMBER','WHAT DOES THIS SAY ABOUT GOD?','WHAT DOES THIS SAY ABOUT CHRIST?','WHAT DOES THIS SAY ABOUT HUMANS?','HOW SHOULD WE RESPOND?']);}
-class ReflectionPage extends StatelessWidget {const ReflectionPage({super.key});@override Widget build(BuildContext c)=>Worksheet('Reflection Journal','Questions, life application, memory verse, and prayer.',Colors.indigo,const ['DATE','BOOK','CHAPTER','WHAT QUESTIONS DO I HAVE?','HOW DOES THIS APPLY TO MY LIFE?','WHAT DO I NEED TO STUDY FURTHER?','WHAT IS THIS CHAPTER TEACHING ME?','MEMORY VERSE','PRAYER']);}
-class Worksheet extends StatelessWidget {final String title,intro;final MaterialColor color;final List<String> sections;const Worksheet(this.title,this.intro,this.color,this.sections,{super.key});@override Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:Text(title),backgroundColor:color.shade50,foregroundColor:color.shade900),body:ListView(padding:const EdgeInsets.all(16),children:[Text(title,style:const TextStyle(fontSize:25,fontWeight:FontWeight.bold)),Text(intro,style:const TextStyle(color:Colors.black54)),const SizedBox(height:16),...sections.map((s)=>Container(margin:const EdgeInsets.symmetric(vertical:6),padding:const EdgeInsets.all(10),decoration:BoxDecoration(color:Colors.white,border:Border.all(color:color.shade200),borderRadius:BorderRadius.circular(10)),child:TextField(maxLines:longField(s)?5:2,decoration:InputDecoration(labelText:s,border:InputBorder.none,alignLabelWithHint:true))),),const SizedBox(height:20)]));}
-bool longField(String s){final x=s.toUpperCase();return x.contains('STORY')||x.contains('SUMMARY')||x.contains('PRAYER')||x.contains('APPLY')||x.contains('PASSAGE')||x.contains('TEACHING')||x.contains('CHALLENGED');}
+class TrackerPage extends StatefulWidget {
+  const TrackerPage({super.key});
+  @override
+  State<TrackerPage> createState() => _TrackerPageState();
+}
 
-class TrackerPage extends StatefulWidget {const TrackerPage({super.key});@override State<TrackerPage> createState()=>_TrackerPageState();}
-class _TrackerPageState extends State<TrackerPage>{final Map<String,int> books=const {'Matthew':28,'Mark':16,'Luke':24,'John':21,'Acts':28,'Romans':16,'1 Corinthians':16,'2 Corinthians':13,'Galatians':6,'Ephesians':6,'Philippians':4,'Colossians':4,'1 Thessalonians':5,'2 Thessalonians':3,'1 Timothy':6,'2 Timothy':4,'Titus':3,'Philemon':1,'Hebrews':13,'James':5,'1 Peter':5,'2 Peter':3,'1 John':5,'2 John':1,'3 John':1,'Jude':1,'Revelation':22};final Map<String,Set<int>> read={};int get total=>books.values.fold(0,(a,b)=>a+b);int get done=>read.values.fold(0,(a,b)=>a+b.length);@override Widget build(BuildContext c){final p=done/total;return Scaffold(appBar:AppBar(title:const Text('New Testament Reading Tracker'),backgroundColor:Colors.blue.shade100),body:ListView(padding:const EdgeInsets.all(16),children:[const Text('NEW TESTAMENT BIBLE READING TRACKER',textAlign:TextAlign.center,style:TextStyle(fontWeight:FontWeight.bold,fontSize:18)),const SizedBox(height:12),LinearProgressIndicator(value:p),const SizedBox(height:8),Text('$done of $total chapters completed',textAlign:TextAlign.center),const SizedBox(height:16),...books.entries.map((e){final s=read.putIfAbsent(e.key,()=>{});return Card(child:ExpansionTile(title:Text(e.key,style:const TextStyle(fontWeight:FontWeight.bold)),subtitle:Text('${s.length}/${e.value} chapters'),children:[Padding(padding:const EdgeInsets.all(10),child:Wrap(spacing:6,runSpacing:6,children:List.generate(e.value,(i){final n=i+1;return FilterChip(label:Text('$n'),selected:s.contains(n),onSelected:(v){setState((){v?s.add(n):s.remove(n);});});})))]));})]));}}
+class _TrackerPageState extends State<TrackerPage> {
+  static const String storageKey = 'bitaniya_nt_tracker_v2';
+
+  final Map<String, int> books = const {
+    'Matthew': 28, 'Mark': 16, 'Luke': 24, 'John': 21, 'Acts': 28,
+    'Romans': 16, '1 Corinthians': 16, '2 Corinthians': 13, 'Galatians': 6,
+    'Ephesians': 6, 'Philippians': 4, 'Colossians': 4,
+    '1 Thessalonians': 5, '2 Thessalonians': 3, '1 Timothy': 6,
+    '2 Timothy': 4, 'Titus': 3, 'Philemon': 1, 'Hebrews': 13,
+    'James': 5, '1 Peter': 5, '2 Peter': 3, '1 John': 5, '2 John': 1,
+    '3 John': 1, 'Jude': 1, 'Revelation': 22,
+  };
+
+  final Map<String, Set<int>> read = {};
+  bool loading = true;
+  bool saving = false;
+
+  int get total => books.values.fold(0, (a, b) => a + b);
+  int get done => read.values.fold(0, (a, b) => a + b.length);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTracker();
+  }
+
+  Future<void> _loadTracker() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList(storageKey) ?? <String>[];
+    for (final item in saved) {
+      final parts = item.split('|');
+      if (parts.length != 2) continue;
+      final chapter = int.tryParse(parts[1]);
+      if (chapter == null || !books.containsKey(parts[0])) continue;
+      read.putIfAbsent(parts[0], () => <int>{}).add(chapter);
+    }
+    if (mounted) setState(() => loading = false);
+  }
+
+  Future<void> _saveTracker() async {
+    setState(() => saving = true);
+    final all = <String>[];
+    for (final entry in read.entries) {
+      for (final chapter in entry.value) {
+        all.add('${entry.key}|$chapter');
+      }
+    }
+    all.sort();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(storageKey, all);
+    if (mounted) setState(() => saving = false);
+  }
+
+  Future<void> _toggle(String book, int chapter, bool selected) async {
+    final set = read.putIfAbsent(book, () => <int>{});
+    setState(() {
+      if (selected) {
+        set.add(chapter);
+      } else {
+        set.remove(chapter);
+      }
+    });
+    await _saveTracker();
+  }
+
+  Future<void> _reset() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Reset reading progress?'),
+        content: const Text('This will uncheck every New Testament chapter.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Reset')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    read.clear();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(storageKey);
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = total == 0 ? 0.0 : done / total;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('New Testament Reading Tracker'),
+        backgroundColor: Colors.blue.shade100,
+        foregroundColor: Colors.blue.shade900,
+        actions: [
+          IconButton(
+            tooltip: 'Reset progress',
+            onPressed: loading ? null : _reset,
+            icon: const Icon(Icons.restart_alt),
+          ),
+        ],
+      ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                const Text(
+                  'NEW TESTAMENT BIBLE READING TRACKER',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.blue),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Your chapter progress is saved automatically on this device/browser.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.black54),
+                ),
+                const SizedBox(height: 16),
+                LinearProgressIndicator(value: progress, minHeight: 10),
+                const SizedBox(height: 8),
+                Text('$done of $total chapters completed (${(progress * 100).round()}%)', textAlign: TextAlign.center),
+                if (saving)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 6),
+                    child: Text('Saving…', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Colors.black54)),
+                  ),
+                const SizedBox(height: 16),
+                ...books.entries.map((entry) {
+                  final completed = read[entry.key]?.length ?? 0;
+                  final set = read.putIfAbsent(entry.key, () => <int>{});
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ExpansionTile(
+                      title: Text(entry.key, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text('$completed/${entry.value} chapters completed'),
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
+                          child: Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: List.generate(entry.value, (index) {
+                              final chapter = index + 1;
+                              return FilterChip(
+                                label: Text('$chapter'),
+                                selected: set.contains(chapter),
+                                onSelected: (value) => _toggle(entry.key, chapter, value),
+                              );
+                            }),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 20),
+              ],
+            ),
+    );
+  }
+}
 
 String fmt(DateTime d)=>'${d.year.toString().padLeft(4,'0')}-${d.month.toString().padLeft(2,'0')}-${d.day.toString().padLeft(2,'0')}';
