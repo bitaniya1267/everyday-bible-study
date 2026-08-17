@@ -1168,26 +1168,21 @@ class _DailyStudyScreenState extends State<DailyStudyScreen> {
               [
                 _buildDayHeader(),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '${day.chapters.length} '
-                        '${day.chapters.length == 1 ? 'chapter' : 'chapters'}',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: _addChapter,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add chapter'),
-                    ),
-                  ],
+
+                // Cleaned up:
+                // The "3 chapters" heading has been removed.
+                // The Add chapter button remains.
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: OutlinedButton.icon(
+                    onPressed: _addChapter,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add chapter'),
+                  ),
                 ),
+
                 const SizedBox(height: 12),
+
                 ...List.generate(
                   day.chapters.length,
                   (index) {
@@ -1212,7 +1207,9 @@ class _DailyStudyScreenState extends State<DailyStudyScreen> {
                     );
                   },
                 ),
+
                 const SizedBox(height: 8),
+
                 SizedBox(
                   width: double.infinity,
                   height: 52,
@@ -1239,44 +1236,20 @@ class _DailyStudyScreenState extends State<DailyStudyScreen> {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Study Day',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: _pickDate,
+          child: InputDecorator(
+            decoration: const InputDecoration(
+              labelText: 'Date',
+              prefixIcon: Icon(Icons.calendar_today),
             ),
-            const SizedBox(height: 12),
-            InkWell(
-              borderRadius: BorderRadius.circular(14),
-              onTap: _pickDate,
-              child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Date',
-                  prefixIcon: Icon(Icons.calendar_today),
-                ),
-                child: Text(
-                  '${selectedDate.day}/'
-                  '${selectedDate.month}/'
-                  '${selectedDate.year}',
-                ),
-              ),
+            child: Text(
+              '${selectedDate.day}/'
+              '${selectedDate.month}/'
+              '${selectedDate.year}',
             ),
-            const SizedBox(height: 10),
-            Text(
-              'Plan as many chapters as you want. '
-              'Three chapters are provided by default, '
-              'but the number is completely optional.',
-              style: TextStyle(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurfaceVariant,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -1829,11 +1802,6 @@ class _ReadingTrackerScreenState
         )
         .length;
   }
-
-  // ==========================================================
-  // FIXED ERROR:
-  // Added "get" so this is a getter instead of a method.
-  // ==========================================================
 
   int get totalReadToday {
     return todayRead.length;
