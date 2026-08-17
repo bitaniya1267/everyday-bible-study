@@ -311,7 +311,7 @@ int get totalNewTestamentChapters {
 }
 
 // ============================================================
-// STORAGE
+// STUDY STORAGE
 // ============================================================
 
 class StudyStorage {
@@ -319,7 +319,6 @@ class StudyStorage {
 
   static Future<List<StudyDay>> loadDays() async {
     final prefs = await SharedPreferences.getInstance();
-
     final raw = prefs.getString(storageKey);
 
     if (raw == null || raw.trim().isEmpty) {
@@ -558,9 +557,16 @@ class _AppShellState extends State<AppShell> {
       HomeScreen(
         days: days,
         onOpenDay: (day) {
-          setState(() {
-            currentIndex = 1;
-          });
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => StandaloneDayEditor(
+                day: day,
+                onSave: (updated) {
+                  updateDay(updated);
+                },
+              ),
+            ),
+          );
         },
         onDeleteDay: deleteDay,
         onOpenSettings: () {
@@ -627,7 +633,7 @@ class _AppShellState extends State<AppShell> {
 // HOME SCREEN
 // ============================================================
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   final List<StudyDay> days;
   final void Function(StudyDay day) onOpenDay;
   final void Function(String dateKey) onDeleteDay;
@@ -641,54 +647,6 @@ class HomeScreen extends StatefulWidget {
     required this.onOpenSettings,
   });
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  DateTime readingDate = DateTime.now();
-
-  Map<String, Set<String>> readingProgress = {};
-
-  bool loadingReading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    loadReadingProgress();
-  }
-
-  Future<void> loadReadingProgress() async {
-    final loaded = await ReadingStorage.load();
-
-    if (!mounted) return;
-
-    setState(() {
-      readingProgress = loaded;
-      loadingReading = false;
-    });
-  }
-
-  String get readingDateKey {
-    return ReadingStorage.dateKey(readingDate);
-  }
-
-  Set<String> get todayRead {
-    return readingProgress[readingDateKey] ?? <String>{};
-  }
-
-  int get totalRead {
-    return todayRead.length;
-  }
-
-  double get percentage {
-    if (totalNewTestamentChapters == 0) {
-      return 0;
-    }
-
-    return totalRead / totalNewTestamentChapters;
-  }
-
   String formatDate(String dateKey) {
     try {
       final date = DateTime.parse(dateKey);
@@ -699,50 +657,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  String displayReadingDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
-  }
-
-  Future<void> pickReadingDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: readingDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-
-    if (picked == null) return;
-
-    setState(() {
-      readingDate = picked;
-    });
-  }
-
-  Future<void> toggleReadingChapter(
-    BibleBook book,
-    int chapter,
-  ) async {
-    final id = '${book.name}|$chapter';
-
-    final set = readingProgress.putIfAbsent(
-      readingDateKey,
-      () => <String>{},
-    );
-
-    setState(() {
-      if (set.contains(id)) {
-        set.remove(id);
-      } else {
-        set.add(id);
-      }
-    });
-
-    await ReadingStorage.save(readingProgress);
-  }
-
   @override
   Widget build(BuildContext context) {
-    final sorted = [...widget.days];
+    final sorted = [...days];
 
     sorted.sort(
       (a, b) => b.dateKey.compareTo(a.dateKey),
@@ -776,7 +693,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             IconButton(
               tooltip: 'Settings',
-              onPressed: widget.onOpenSettings,
+              onPressed: onOpenSettings,
               icon: const Icon(Icons.settings_outlined),
             ),
           ],
@@ -811,13 +728,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 22),
 
                 // ==================================================
                 // READING TRACKER ON HOME SCREEN
                 // ==================================================
 
-                _buildReadingTrackerCard(),
+                const Text(
+                  'New Testament Reading',
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                const HomeReadingTracker(),
 
                 const SizedBox(height: 24),
 
@@ -836,7 +763,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icons.menu_book_outlined,
                     title: 'No studies yet',
                     message:
-                        'Start your first Bible study from the Study tab.',
+                        'Open the Study tab and add a chapter when you are ready.',
                   )
                 else
                   ...sorted.map(
@@ -884,18 +811,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                         onTap: () {
-                          widget.onOpenDay(day);
-
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => StandaloneDayEditor(
-                                day: day,
-                                onSave: (updated) {
-                                  widget.onOpenDay(updated);
-                                },
-                              ),
-                            ),
-                          );
+                          onOpenDay(day);
                         },
                       ),
                     ),
@@ -903,204 +819,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildReadingTrackerCard() {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: pickReadingDate,
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    child: const Icon(Icons.auto_stories),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'New Testament Reading',
-                      style: TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Choose date',
-                    onPressed: pickReadingDate,
-                    icon: const Icon(Icons.calendar_month),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 8),
-
-              Text(
-                displayReadingDate(readingDate),
-                style: TextStyle(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant,
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '$totalRead / '
-                      '$totalNewTestamentChapters chapters',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    '${(percentage * 100).toStringAsFixed(1)}%',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 10),
-
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: LinearProgressIndicator(
-                  value: percentage,
-                  minHeight: 9,
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
-              if (loadingReading)
-                const Center(
-                  child: CircularProgressIndicator(),
-                )
-              else
-                _buildHomeBookList(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHomeBookList() {
-    return Column(
-      children: [
-        ...newTestamentBooks.map(
-          (book) => _buildHomeBook(book),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHomeBook(BibleBook book) {
-    final read = todayRead
-        .where(
-          (id) => id.startsWith('${book.name}|'),
-        )
-        .length;
-
-    return ExpansionTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(
-        book.name,
-        style: const TextStyle(
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      subtitle: Text(
-        '$read / ${book.chapters} chapters',
-      ),
-      leading: CircleAvatar(
-        radius: 19,
-        child: Text(
-          '$read',
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      children: [
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate:
-              const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4,
-            crossAxisSpacing: 7,
-            mainAxisSpacing: 7,
-            childAspectRatio: 1.35,
-          ),
-          itemCount: book.chapters,
-          itemBuilder: (context, index) {
-            final chapter = index + 1;
-            final id = '${book.name}|$chapter';
-            final isRead = todayRead.contains(id);
-
-            return InkWell(
-              borderRadius: BorderRadius.circular(9),
-              onTap: () {
-                toggleReadingChapter(
-                  book,
-                  chapter,
-                );
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isRead
-                      ? Theme.of(context)
-                          .colorScheme
-                          .primary
-                      : Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest,
-                  borderRadius:
-                      BorderRadius.circular(9),
-                  border: Border.all(
-                    color: isRead
-                        ? Theme.of(context)
-                            .colorScheme
-                            .primary
-                        : Theme.of(context)
-                            .colorScheme
-                            .outline
-                            .withOpacity(0.3),
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    '$chapter',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isRead
-                          ? Theme.of(context)
-                              .colorScheme
-                              .onPrimary
-                          : null,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
         ),
       ],
     );
@@ -1137,7 +855,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (answer == true) {
-      widget.onDeleteDay(day.dateKey);
+      onDeleteDay(day.dateKey);
     }
   }
 }
@@ -1297,8 +1015,7 @@ class DailyStudyScreen extends StatefulWidget {
       _DailyStudyScreenState();
 }
 
-class _DailyStudyScreenState
-    extends State<DailyStudyScreen> {
+class _DailyStudyScreenState extends State<DailyStudyScreen> {
   late DateTime selectedDate;
   StudyDay? currentDay;
 
@@ -1330,8 +1047,7 @@ class _DailyStudyScreenState
       currentDay = _copyDay(existing.first);
     } else {
       // IMPORTANT:
-      // A new study starts with ZERO chapters.
-      // Chapters are added manually by the user.
+      // No chapters are automatically created.
       currentDay = StudyDay(
         dateKey: key,
         chapters: [],
@@ -1451,60 +1167,81 @@ class _DailyStudyScreenState
               [
                 _buildDayHeader(),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
 
-                // No "3 chapters" heading.
-                // Chapter cards only appear after the user
-                // chooses to add a chapter.
-
-                if (day.chapters.isEmpty)
-                  _buildEmptyChapterMessage(),
-
-                if (day.chapters.isNotEmpty)
-                  ...List.generate(
-                    day.chapters.length,
-                    (index) {
-                      final chapter =
-                          day.chapters[index];
-
-                      return Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: 14,
-                        ),
-                        child: ChapterCard(
-                          key: ValueKey(chapter.id),
-                          number: index + 1,
-                          chapter: chapter,
-                          canDelete: true,
-                          onChanged: () {
-                            _saveSilently();
-                          },
-                          onDelete: () {
-                            _removeChapter(index);
-                          },
-                        ),
-                      );
-                    },
-                  ),
-
-                const SizedBox(height: 4),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
+                Align(
+                  alignment: Alignment.centerRight,
                   child: OutlinedButton.icon(
                     onPressed: _addChapter,
                     icon: const Icon(Icons.add),
-                    label: const Text(
-                      'ADD CHAPTER',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    label: const Text('Add chapter'),
                   ),
                 ),
 
                 const SizedBox(height: 12),
+
+                if (day.chapters.isEmpty)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.menu_book_outlined,
+                            size: 42,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'No chapters added',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Add a chapter whenever you are ready.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                ...List.generate(
+                  day.chapters.length,
+                  (index) {
+                    final chapter = day.chapters[index];
+
+                    return Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: 14,
+                      ),
+                      child: ChapterCard(
+                        key: ValueKey(chapter.id),
+                        number: index + 1,
+                        chapter: chapter,
+                        canDelete: true,
+                        onChanged: () {
+                          _saveSilently();
+                        },
+                        onDelete: () {
+                          _removeChapter(index);
+                        },
+                      ),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 8),
 
                 SizedBox(
                   width: double.infinity,
@@ -1530,62 +1267,32 @@ class _DailyStudyScreenState
 
   Widget _buildDayHeader() {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: _pickDate,
-          child: InputDecorator(
-            decoration: const InputDecoration(
-              labelText: 'Date',
-              prefixIcon: Icon(Icons.calendar_today),
-            ),
-            child: Text(
-              '${selectedDate.day}/'
-              '${selectedDate.month}/'
-              '${selectedDate.year}',
-            ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: _pickDate,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.calendar_today,
+                size: 28,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  '${selectedDate.day}/'
+                  '${selectedDate.month}/'
+                  '${selectedDate.year}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyChapterMessage() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 26,
-        ),
-        child: Column(
-          children: [
-            Icon(
-              Icons.menu_book_outlined,
-              size: 42,
-              color: Theme.of(context)
-                  .colorScheme
-                  .primary,
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'No chapters added',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              'Add a chapter when you are ready to study.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurfaceVariant,
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -1672,14 +1379,15 @@ class _DailyStudyEditorBodyState
         if (day.chapters.isEmpty)
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(22),
-              child: Text(
-                'No chapters added yet.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant,
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: Text(
+                  'No chapters added.',
+                  style: TextStyle(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurfaceVariant,
+                  ),
                 ),
               ),
             ),
@@ -1762,8 +1470,7 @@ class ChapterCard extends StatefulWidget {
   });
 
   @override
-  State<ChapterCard> createState() =>
-      _ChapterCardState();
+  State<ChapterCard> createState() => _ChapterCardState();
 }
 
 class _ChapterCardState extends State<ChapterCard> {
@@ -1868,43 +1575,31 @@ class _ChapterCardState extends State<ChapterCard> {
   void sync() {
     widget.chapter.reference =
         referenceController.text;
-
     widget.chapter.keyVerse =
         keyVerseController.text;
-
     widget.chapter.summary =
         summaryController.text;
-
     widget.chapter.observations =
         observationsController.text;
-
     widget.chapter.meaning =
         meaningController.text;
-
     widget.chapter.lessons =
         lessonsController.text;
-
     widget.chapter.application =
         applicationController.text;
-
     widget.chapter.questions =
         questionsController.text;
-
     widget.chapter.prayer =
         prayerController.text;
 
     widget.chapter.characterName =
         characterNameController.text;
-
     widget.chapter.characterWho =
         characterWhoController.text;
-
     widget.chapter.characterTraits =
         characterTraitsController.text;
-
     widget.chapter.characterActions =
         characterActionsController.text;
-
     widget.chapter.characterLessons =
         characterLessonsController.text;
 
@@ -1940,12 +1635,17 @@ class _ChapterCardState extends State<ChapterCard> {
   Widget build(BuildContext context) {
     return Card(
       clipBehavior: Clip.antiAlias,
+
+      // IMPORTANT:
+      // No unsupported contentPadding parameter here.
       child: ExpansionTile(
-        initiallyExpanded: true,
+        initiallyExpanded: false,
+
         tilePadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 5,
         ),
+
         title: Text(
           'Chapter ${widget.number}',
           style: const TextStyle(
@@ -1954,14 +1654,12 @@ class _ChapterCardState extends State<ChapterCard> {
           ),
         ),
 
-        // "Enter chapter reference" REMOVED.
-        // The subtitle is blank when no reference exists.
+        // Removed "Enter chapter reference".
         subtitle: widget.chapter.reference.isEmpty
             ? null
             : Text(widget.chapter.reference),
 
-        childrenPadding:
-            const EdgeInsets.fromLTRB(
+        childrenPadding: const EdgeInsets.fromLTRB(
           16,
           0,
           16,
@@ -2039,8 +1737,13 @@ class _ChapterCardState extends State<ChapterCard> {
 
           const Divider(height: 25),
 
+          // ==================================================
+          // CHARACTER STUDY
+          // ==================================================
+
           ExpansionTile(
             tilePadding: EdgeInsets.zero,
+
             title: const Text(
               'Character Study',
               style: TextStyle(
@@ -2048,11 +1751,15 @@ class _ChapterCardState extends State<ChapterCard> {
                 fontSize: 17,
               ),
             ),
+
             subtitle: const Text(
               'Study a person from this chapter',
             ),
-            leading:
-                const Icon(Icons.person_outline),
+
+            leading: const Icon(
+              Icons.person_outline,
+            ),
+
             children: [
               const SizedBox(height: 8),
 
@@ -2113,10 +1820,12 @@ class _ChapterCardState extends State<ChapterCard> {
               alignment: Alignment.centerRight,
               child: TextButton.icon(
                 onPressed: widget.onDelete,
-                icon:
-                    const Icon(Icons.delete_outline),
-                label:
-                    const Text('Remove chapter'),
+                icon: const Icon(
+                  Icons.delete_outline,
+                ),
+                label: const Text(
+                  'Remove chapter',
+                ),
               ),
             ),
         ],
@@ -2159,11 +1868,13 @@ class _SectionTitle extends StatelessWidget {
 }
 
 // ============================================================
-// NEW TESTAMENT READING TRACKER
+// READING TRACKER
 // ============================================================
 
 class ReadingTrackerScreen extends StatefulWidget {
-  const ReadingTrackerScreen({super.key});
+  const ReadingTrackerScreen({
+    super.key,
+  });
 
   @override
   State<ReadingTrackerScreen> createState() =>
@@ -2200,13 +1911,16 @@ class _ReadingTrackerScreenState
   }
 
   Set<String> get todayRead {
-    return progress[currentDateKey] ?? <String>{};
+    return progress[currentDateKey] ??
+        <String>{};
   }
 
   int bookReadCount(BibleBook book) {
     return todayRead
         .where(
-          (id) => id.startsWith('${book.name}|'),
+          (id) => id.startsWith(
+            '${book.name}|',
+          ),
         )
         .length;
   }
@@ -2219,7 +1933,8 @@ class _ReadingTrackerScreenState
     BibleBook book,
     int chapter,
   ) async {
-    final id = '${book.name}|$chapter';
+    final id =
+        '${book.name}|$chapter';
 
     final set = progress.putIfAbsent(
       currentDateKey,
@@ -2277,13 +1992,16 @@ class _ReadingTrackerScreenState
       slivers: [
         SliverAppBar.large(
           pinned: true,
-          title: const Text('Bible Reading'),
+          title: const Text(
+            'Bible Reading',
+          ),
           actions: [
             IconButton(
               tooltip: 'Choose date',
               onPressed: pickDate,
-              icon:
-                  const Icon(Icons.calendar_month),
+              icon: const Icon(
+                Icons.calendar_month,
+              ),
             ),
           ],
         ),
@@ -2349,8 +2067,9 @@ class _ReadingTrackerScreenState
           child: Row(
             children: [
               const CircleAvatar(
-                child:
-                    Icon(Icons.calendar_today),
+                child: Icon(
+                  Icons.calendar_today,
+                ),
               ),
 
               const SizedBox(width: 14),
@@ -2368,15 +2087,21 @@ class _ReadingTrackerScreenState
                         fontSize: 17,
                       ),
                     ),
+
                     const SizedBox(height: 4),
+
                     Text(
-                      displayDate(selectedDate),
+                      displayDate(
+                        selectedDate,
+                      ),
                     ),
                   ],
                 ),
               ),
 
-              const Icon(Icons.chevron_right),
+              const Icon(
+                Icons.chevron_right,
+              ),
             ],
           ),
         ),
@@ -2406,7 +2131,8 @@ class _ReadingTrackerScreenState
                     'Today’s Progress',
                     style: TextStyle(
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
                 ),
@@ -2415,7 +2141,8 @@ class _ReadingTrackerScreenState
                   '$totalReadToday / '
                   '$totalNewTestamentChapters',
                   style: const TextStyle(
-                    fontWeight: FontWeight.bold,
+                    fontWeight:
+                        FontWeight.bold,
                   ),
                 ),
               ],
@@ -2444,23 +2171,30 @@ class _ReadingTrackerScreenState
     );
   }
 
-  Widget _buildBookCard(BibleBook book) {
-    final read = bookReadCount(book);
+  Widget _buildBookCard(
+    BibleBook book,
+  ) {
+    final read =
+        bookReadCount(book);
 
-    final percentage = book.chapters == 0
-        ? 0.0
-        : read / book.chapters;
+    final percentage =
+        book.chapters == 0
+            ? 0.0
+            : read / book.chapters;
 
     return Card(
       margin:
-          const EdgeInsets.only(bottom: 10),
+          const EdgeInsets.only(
+        bottom: 10,
+      ),
       child: ExpansionTile(
         leading: CircleAvatar(
           child: Text(
             '$read',
             style: const TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.bold,
+              fontWeight:
+                  FontWeight.bold,
             ),
           ),
         ),
@@ -2468,7 +2202,8 @@ class _ReadingTrackerScreenState
         title: Text(
           book.name,
           style: const TextStyle(
-            fontWeight: FontWeight.w700,
+            fontWeight:
+                FontWeight.w700,
           ),
         ),
 
@@ -2496,7 +2231,6 @@ class _ReadingTrackerScreenState
             shrinkWrap: true,
             physics:
                 const NeverScrollableScrollPhysics(),
-
             gridDelegate:
                 const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
@@ -2507,81 +2241,110 @@ class _ReadingTrackerScreenState
 
             itemCount: book.chapters,
 
-            itemBuilder: (context, index) {
-              final chapter = index + 1;
+            itemBuilder:
+                (context, index) {
+              final chapter =
+                  index + 1;
 
               final id =
                   '${book.name}|$chapter';
 
               final isRead =
-                  todayRead.contains(id);
+                  todayRead.contains(
+                id,
+              );
 
               return InkWell(
                 borderRadius:
-                    BorderRadius.circular(10),
-
+                    BorderRadius.circular(
+                  10,
+                ),
                 onTap: () {
                   toggleChapter(
                     book,
                     chapter,
                   );
                 },
-
                 child: Container(
                   decoration:
                       BoxDecoration(
                     color: isRead
-                        ? Theme.of(context)
+                        ? Theme.of(
+                            context,
+                          )
                             .colorScheme
                             .primary
-                        : Theme.of(context)
+                        : Theme.of(
+                            context,
+                          )
                             .colorScheme
                             .surfaceContainerHighest,
 
                     borderRadius:
-                        BorderRadius.circular(10),
+                        BorderRadius.circular(
+                      10,
+                    ),
 
                     border: Border.all(
                       color: isRead
-                          ? Theme.of(context)
+                          ? Theme.of(
+                              context,
+                            )
                               .colorScheme
                               .primary
-                          : Theme.of(context)
+                          : Theme.of(
+                              context,
+                            )
                               .colorScheme
                               .outline
-                              .withOpacity(0.3),
+                              .withOpacity(
+                                0.3,
+                              ),
                     ),
                   ),
 
                   child: Center(
                     child: Column(
                       mainAxisAlignment:
-                          MainAxisAlignment.center,
+                          MainAxisAlignment
+                              .center,
                       children: [
                         Icon(
                           isRead
-                              ? Icons.check_circle
-                              : Icons.circle_outlined,
+                              ? Icons
+                                  .check_circle
+                              : Icons
+                                  .circle_outlined,
                           size: 20,
                           color: isRead
-                              ? Theme.of(context)
+                              ? Theme.of(
+                                  context,
+                                )
                                   .colorScheme
                                   .onPrimary
-                              : Theme.of(context)
+                              : Theme.of(
+                                  context,
+                                )
                                   .colorScheme
                                   .onSurface,
                         ),
 
-                        const SizedBox(height: 3),
+                        const SizedBox(
+                          height: 3,
+                        ),
 
                         Text(
                           'Ch. $chapter',
-                          style: TextStyle(
+                          style:
+                              TextStyle(
                             fontSize: 12,
                             fontWeight:
-                                FontWeight.bold,
+                                FontWeight
+                                    .bold,
                             color: isRead
-                                ? Theme.of(context)
+                                ? Theme.of(
+                                    context,
+                                  )
                                     .colorScheme
                                     .onPrimary
                                 : null,
@@ -2601,12 +2364,360 @@ class _ReadingTrackerScreenState
 }
 
 // ============================================================
+// HOME READING TRACKER
+// ============================================================
+
+class HomeReadingTracker
+    extends StatefulWidget {
+  const HomeReadingTracker({
+    super.key,
+  });
+
+  @override
+  State<HomeReadingTracker> createState() =>
+      _HomeReadingTrackerState();
+}
+
+class _HomeReadingTrackerState
+    extends State<HomeReadingTracker> {
+  DateTime selectedDate = DateTime.now();
+
+  Map<String, Set<String>> progress = {};
+
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final loaded =
+        await ReadingStorage.load();
+
+    if (!mounted) return;
+
+    setState(() {
+      progress = loaded;
+      loading = false;
+    });
+  }
+
+  String get dateKey {
+    return ReadingStorage.dateKey(
+      selectedDate,
+    );
+  }
+
+  Set<String> get read {
+    return progress[dateKey] ??
+        <String>{};
+  }
+
+  int get totalRead {
+    return read.length;
+  }
+
+  double get percentage {
+    if (totalNewTestamentChapters == 0) {
+      return 0;
+    }
+
+    return totalRead /
+        totalNewTestamentChapters;
+  }
+
+  Future<void> toggle(
+    BibleBook book,
+    int chapter,
+  ) async {
+    final id =
+        '${book.name}|$chapter';
+
+    final set =
+        progress.putIfAbsent(
+      dateKey,
+      () => <String>{},
+    );
+
+    setState(() {
+      if (set.contains(id)) {
+        set.remove(id);
+      } else {
+        set.add(id);
+      }
+    });
+
+    await ReadingStorage.save(
+      progress,
+    );
+  }
+
+  Future<void> pickDate() async {
+    final picked =
+        await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      selectedDate = picked;
+    });
+  }
+
+  @override
+  Widget build(
+    BuildContext context,
+  ) {
+    if (loading) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(
+            child:
+                CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.auto_stories,
+                  size: 28,
+                ),
+
+                const SizedBox(width: 10),
+
+                const Expanded(
+                  child: Text(
+                    'New Testament Reading',
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
+                  ),
+                ),
+
+                IconButton(
+                  tooltip:
+                      'Choose reading date',
+                  onPressed: pickDate,
+                  icon: const Icon(
+                    Icons.calendar_month,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 6),
+
+            Text(
+              '${selectedDate.day}/'
+              '${selectedDate.month}/'
+              '${selectedDate.year}',
+              style: TextStyle(
+                color: Theme.of(
+                  context,
+                )
+                    .colorScheme
+                    .onSurfaceVariant,
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            Row(
+              children: [
+                Expanded(
+                  child:
+                      LinearProgressIndicator(
+                    value: percentage,
+                    minHeight: 9,
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                Text(
+                  '$totalRead/'
+                  '$totalNewTestamentChapters',
+                  style: const TextStyle(
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 6),
+
+            Text(
+              '${(percentage * 100).toStringAsFixed(1)}% completed',
+              style: TextStyle(
+                color: Theme.of(
+                  context,
+                )
+                    .colorScheme
+                    .onSurfaceVariant,
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            ...newTestamentBooks.map(
+              (book) {
+                final bookRead =
+                    read
+                        .where(
+                          (id) =>
+                              id.startsWith(
+                            '${book.name}|',
+                          ),
+                        )
+                        .length;
+
+                return ExpansionTile(
+                  tilePadding:
+                      EdgeInsets.zero,
+
+                  title: Text(
+                    book.name,
+                    style:
+                        const TextStyle(
+                      fontWeight:
+                          FontWeight.w600,
+                    ),
+                  ),
+
+                  subtitle: Text(
+                    '$bookRead / '
+                    '${book.chapters} chapters',
+                  ),
+
+                  childrenPadding:
+                      const EdgeInsets
+                          .only(
+                    bottom: 12,
+                  ),
+
+                  children: [
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics:
+                          const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 4,
+                        crossAxisSpacing: 6,
+                        mainAxisSpacing: 6,
+                        childAspectRatio:
+                            1.4,
+                      ),
+                      itemCount:
+                          book.chapters,
+                      itemBuilder:
+                          (context, index) {
+                        final chapter =
+                            index + 1;
+
+                        final id =
+                            '${book.name}|$chapter';
+
+                        final isRead =
+                            read.contains(
+                          id,
+                        );
+
+                        return InkWell(
+                          borderRadius:
+                              BorderRadius
+                                  .circular(
+                            8,
+                          ),
+                          onTap: () {
+                            toggle(
+                              book,
+                              chapter,
+                            );
+                          },
+                          child:
+                              Container(
+                            decoration:
+                                BoxDecoration(
+                              color: isRead
+                                  ? Theme.of(
+                                      context,
+                                    )
+                                      .colorScheme
+                                      .primary
+                                  : Theme.of(
+                                      context,
+                                    )
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                              borderRadius:
+                                  BorderRadius
+                                      .circular(
+                                8,
+                              ),
+                            ),
+                            child:
+                                Center(
+                              child: Text(
+                                '$chapter',
+                                style:
+                                    TextStyle(
+                                  fontWeight:
+                                      FontWeight.bold,
+                                  color: isRead
+                                      ? Theme.of(
+                                          context,
+                                        )
+                                          .colorScheme
+                                          .onPrimary
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
 // BACKUP SCREEN
 // ============================================================
 
-class BackupScreen extends StatefulWidget {
+class BackupScreen
+    extends StatefulWidget {
   final List<StudyDay> days;
-  final Future<void> Function() onRestored;
+  final Future<void> Function()
+      onRestored;
 
   const BackupScreen({
     super.key,
@@ -2621,7 +2732,8 @@ class BackupScreen extends StatefulWidget {
 
 class _BackupScreenState
     extends State<BackupScreen> {
-  late final TextEditingController backupController;
+  late final TextEditingController
+      backupController;
 
   bool showingBackup = false;
 
@@ -2652,7 +2764,9 @@ class _BackupScreenState
   }
 
   Future<void> copyBackup() async {
-    if (backupController.text.trim().isEmpty) {
+    if (backupController.text
+        .trim()
+        .isEmpty) {
       await createBackup();
     }
 
@@ -2682,8 +2796,9 @@ class _BackupScreenState
       ScaffoldMessenger.of(context)
           .showSnackBar(
         const SnackBar(
-          content:
-              Text('Paste your backup first.'),
+          content: Text(
+            'Paste your backup first.',
+          ),
         ),
       );
 
@@ -2728,8 +2843,9 @@ class _BackupScreenState
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title:
-              const Text('Restore backup?'),
+          title: const Text(
+            'Restore backup?',
+          ),
           content: const Text(
             'Restoring will replace the current study data '
             'with the backup data.',
@@ -2742,8 +2858,9 @@ class _BackupScreenState
                   false,
                 );
               },
-              child:
-                  const Text('Cancel'),
+              child: const Text(
+                'Cancel',
+              ),
             ),
             FilledButton(
               onPressed: () {
@@ -2752,8 +2869,9 @@ class _BackupScreenState
                   true,
                 );
               },
-              child:
-                  const Text('Restore'),
+              child: const Text(
+                'Restore',
+              ),
             ),
           ],
         );
@@ -2766,15 +2884,20 @@ class _BackupScreenState
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return CustomScrollView(
       slivers: [
         const SliverAppBar.large(
-          title: Text('Backup & Restore'),
+          title: Text(
+            'Backup & Restore',
+          ),
         ),
 
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(
+          padding:
+              const EdgeInsets.fromLTRB(
             16,
             8,
             16,
@@ -2787,10 +2910,13 @@ class _BackupScreenState
                 Card(
                   child: Padding(
                     padding:
-                        const EdgeInsets.all(18),
+                        const EdgeInsets.all(
+                      18,
+                    ),
                     child: Column(
                       crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                          CrossAxisAlignment
+                              .start,
                       children: [
                         const Icon(
                           Icons.security,
@@ -2803,7 +2929,8 @@ class _BackupScreenState
 
                         const Text(
                           'Protect your Bible studies',
-                          style: TextStyle(
+                          style:
+                              TextStyle(
                             fontSize: 21,
                             fontWeight:
                                 FontWeight.bold,
@@ -2818,7 +2945,9 @@ class _BackupScreenState
                           '${widget.days.length} study days '
                           'are currently saved.',
                           style: TextStyle(
-                            color: Theme.of(context)
+                            color: Theme.of(
+                              context,
+                            )
                                 .colorScheme
                                 .onSurfaceVariant,
                           ),
@@ -2848,8 +2977,9 @@ class _BackupScreenState
                       FilledButton.icon(
                     onPressed:
                         createBackup,
-                    icon:
-                        const Icon(Icons.backup),
+                    icon: const Icon(
+                      Icons.backup,
+                    ),
                     label: const Text(
                       'CREATE BACKUP',
                     ),
@@ -2866,8 +2996,9 @@ class _BackupScreenState
                       OutlinedButton.icon(
                     onPressed:
                         copyBackup,
-                    icon:
-                        const Icon(Icons.copy),
+                    icon: const Icon(
+                      Icons.copy,
+                    ),
                     label: const Text(
                       'COPY BACKUP',
                     ),
@@ -2925,8 +3056,9 @@ class _BackupScreenState
                       FilledButton.icon(
                     onPressed:
                         confirmRestore,
-                    icon:
-                        const Icon(Icons.restore),
+                    icon: const Icon(
+                      Icons.restore,
+                    ),
                     label: const Text(
                       'RESTORE BACKUP',
                     ),
@@ -2940,7 +3072,8 @@ class _BackupScreenState
 
                   const Text(
                     'Your backup is ready',
-                    style: TextStyle(
+                    style:
+                        TextStyle(
                       fontWeight:
                           FontWeight.bold,
                     ),
