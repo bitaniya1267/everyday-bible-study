@@ -1,15 +1,13 @@
 import 'dart:convert';
-import 'dart:html' as html;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const BitaniyaBibleStudyApp());
 }
-
-// ============================================================
-// APP
-// ============================================================
 
 class BitaniyaBibleStudyApp extends StatelessWidget {
   const BitaniyaBibleStudyApp({super.key});
@@ -21,30 +19,152 @@ class BitaniyaBibleStudyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF9A5C78),
-        ),
-        scaffoldBackgroundColor: const Color(0xFFFCF9F6),
+        colorSchemeSeed: const Color(0xFF6A4BBC),
+        scaffoldBackgroundColor: const Color(0xFFF7F5FB),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.grey.shade200),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
             borderSide: const BorderSide(
-              color: Color(0xFF9A5C78),
-              width: 2,
+              color: Color(0xFF6A4BBC),
+              width: 1.5,
             ),
           ),
         ),
       ),
-      home: const HomePage(),
+      home: const AppShell(),
+    );
+  }
+}
+
+// ============================================================
+// DATA MODELS
+// ============================================================
+
+class ChapterEntry {
+  String id;
+  String reference;
+
+  String keyVerse;
+  String summary;
+  String observations;
+  String meaning;
+  String lessons;
+  String application;
+  String questions;
+  String prayer;
+
+  String characterName;
+  String characterWho;
+  String characterTraits;
+  String characterActions;
+  String characterLessons;
+
+  ChapterEntry({
+    required this.id,
+    required this.reference,
+    this.keyVerse = '',
+    this.summary = '',
+    this.observations = '',
+    this.meaning = '',
+    this.lessons = '',
+    this.application = '',
+    this.questions = '',
+    this.prayer = '',
+    this.characterName = '',
+    this.characterWho = '',
+    this.characterTraits = '',
+    this.characterActions = '',
+    this.characterLessons = '',
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'reference': reference,
+      'keyVerse': keyVerse,
+      'summary': summary,
+      'observations': observations,
+      'meaning': meaning,
+      'lessons': lessons,
+      'application': application,
+      'questions': questions,
+      'prayer': prayer,
+      'characterName': characterName,
+      'characterWho': characterWho,
+      'characterTraits': characterTraits,
+      'characterActions': characterActions,
+      'characterLessons': characterLessons,
+    };
+  }
+
+  factory ChapterEntry.fromJson(Map<String, dynamic> json) {
+    return ChapterEntry(
+      id: json['id']?.toString() ??
+          DateTime.now().microsecondsSinceEpoch.toString(),
+      reference: json['reference']?.toString() ?? '',
+      keyVerse: json['keyVerse']?.toString() ?? '',
+      summary: json['summary']?.toString() ?? '',
+      observations: json['observations']?.toString() ?? '',
+      meaning: json['meaning']?.toString() ?? '',
+      lessons: json['lessons']?.toString() ?? '',
+      application: json['application']?.toString() ?? '',
+      questions: json['questions']?.toString() ?? '',
+      prayer: json['prayer']?.toString() ?? '',
+      characterName: json['characterName']?.toString() ?? '',
+      characterWho: json['characterWho']?.toString() ?? '',
+      characterTraits: json['characterTraits']?.toString() ?? '',
+      characterActions: json['characterActions']?.toString() ?? '',
+      characterLessons: json['characterLessons']?.toString() ?? '',
+    );
+  }
+}
+
+class StudyDay {
+  String dateKey;
+  List<ChapterEntry> chapters;
+
+  StudyDay({
+    required this.dateKey,
+    required this.chapters,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'dateKey': dateKey,
+      'chapters': chapters.map((c) => c.toJson()).toList(),
+    };
+  }
+
+  factory StudyDay.fromJson(Map<String, dynamic> json) {
+    final rawChapters = json['chapters'];
+
+    final chapters = <ChapterEntry>[];
+
+    if (rawChapters is List) {
+      for (final item in rawChapters) {
+        if (item is Map) {
+          chapters.add(
+            ChapterEntry.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          );
+        }
+      }
+    }
+
+    return StudyDay(
+      dateKey: json['dateKey']?.toString() ?? '',
+      chapters: chapters,
     );
   }
 }
@@ -53,82 +173,87 @@ class BitaniyaBibleStudyApp extends StatelessWidget {
 // STORAGE
 // ============================================================
 
-class AppStorage {
-  static const studiesKey = 'bitaniya_daily_studies';
-  static const trackerKey = 'bitaniya_nt_tracker';
+class StudyStorage {
+  static const String storageKey = 'bitaniya_bible_studies';
 
-  static List<Map<String, dynamic>> studies() {
-    final raw = html.window.localStorage[studiesKey];
+  static Future<List<StudyDay>> loadDays() async {
+    final prefs = await SharedPreferences.getInstance();
 
-    if (raw == null || raw.isEmpty) return [];
+    final raw = prefs.getString(storageKey);
 
-    try {
-      final decoded = jsonDecode(raw);
-
-      if (decoded is List) {
-        return decoded
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList();
-      }
-    } catch (_) {}
-
-    return [];
-  }
-
-  static void saveStudies(List<Map<String, dynamic>> data) {
-    html.window.localStorage[studiesKey] = jsonEncode(data);
-  }
-
-  static Set<String> tracker() {
-    final raw = html.window.localStorage[trackerKey];
-
-    if (raw == null || raw.isEmpty) return {};
+    if (raw == null || raw.trim().isEmpty) {
+      return [];
+    }
 
     try {
       final decoded = jsonDecode(raw);
 
-      if (decoded is List) {
-        return decoded.map((e) => e.toString()).toSet();
+      if (decoded is! List) {
+        return [];
       }
-    } catch (_) {}
 
-    return {};
+      return decoded
+          .whereType<Map>()
+          .map(
+            (item) => StudyDay.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          )
+          .toList();
+    } catch (_) {
+      return [];
+    }
   }
 
-  static void saveTracker(Set<String> data) {
-    html.window.localStorage[trackerKey] =
-        jsonEncode(data.toList());
+  static Future<void> saveDays(List<StudyDay> days) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final data = days.map((day) => day.toJson()).toList();
+
+    await prefs.setString(
+      storageKey,
+      jsonEncode(data),
+    );
   }
 
-  static Map<String, dynamic> backup() {
-    return {
+  static Future<String> createBackup(List<StudyDay> days) async {
+    final backup = {
       'app': 'Bitaniya Bible Study',
-      'version': 3,
-      'created': DateTime.now().toIso8601String(),
-      'studies': studies(),
-      'tracker': tracker().toList(),
+      'version': 1,
+      'createdAt': DateTime.now().toIso8601String(),
+      'studies': days.map((day) => day.toJson()).toList(),
     };
+
+    return const JsonEncoder.withIndent('  ').convert(backup);
   }
 
-  static bool restore(Map<String, dynamic> data) {
+  static Future<bool> restoreBackup(String text) async {
     try {
-      final savedStudies = data['studies'];
+      final decoded = jsonDecode(text);
 
-      if (savedStudies is List) {
-        saveStudies(
-          savedStudies
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList(),
-        );
+      if (decoded is! Map) {
+        return false;
       }
 
-      final savedTracker = data['tracker'];
+      final rawStudies = decoded['studies'];
 
-      if (savedTracker is List) {
-        saveTracker(
-          savedTracker.map((e) => e.toString()).toSet(),
-        );
+      if (rawStudies is! List) {
+        return false;
       }
+
+      final restored = <StudyDay>[];
+
+      for (final item in rawStudies) {
+        if (item is Map) {
+          restored.add(
+            StudyDay.fromJson(
+              Map<String, dynamic>.from(item),
+            ),
+          );
+        }
+      }
+
+      await saveDays(restored);
 
       return true;
     } catch (_) {
@@ -138,918 +263,1017 @@ class AppStorage {
 }
 
 // ============================================================
-// HOME
+// APP SHELL
 // ============================================================
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class AppShell extends StatefulWidget {
+  const AppShell({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<AppShell> createState() => _AppShellState();
 }
 
-class _HomePageState extends State<HomePage> {
-  void refresh() => setState(() {});
+class _AppShellState extends State<AppShell> {
+  int currentIndex = 0;
 
-  @override
-  Widget build(BuildContext context) {
-    final studies = AppStorage.studies();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Bitaniya Bible Study',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Backup & Restore',
-            icon: const Icon(Icons.backup_outlined),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const BackupPage(),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: 900,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Bitaniya Bible Study',
-                      style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF74455A),
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      'Read. Study. Understand. Apply.',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-
-                    const SizedBox(height: 22),
-
-                    _mainCard(
-                      context,
-                      icon: Icons.today_outlined,
-                      title: 'Daily Study',
-                      subtitle:
-                          'Study one or several chapters today.',
-                      color: const Color(0xFFFFEAF2),
-                      page: const DailyStudyPage(),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    _mainCard(
-                      context,
-                      icon: Icons.menu_book_outlined,
-                      title: 'Chapter Study',
-                      subtitle:
-                          'Go deeper into one chapter using the complete study questions.',
-                      color: Colors.white,
-                      page: const ChapterStudyPage(),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    _mainCard(
-                      context,
-                      icon: Icons.check_circle_outline,
-                      title: 'New Testament Tracker',
-                      subtitle:
-                          'Track your progress chapter by chapter.',
-                      color: const Color(0xFFEAF2FF),
-                      page: const TrackerPage(),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    const Text(
-                      'Recent Daily Studies',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    if (studies.isEmpty)
-                      _emptyCard()
-                    else
-                      ...studies.reversed.take(5).map(
-                            (study) => _recentStudy(
-                              context,
-                              study,
-                            ),
-                          ),
-
-                    const SizedBox(height: 20),
-
-                    _mainCard(
-                      context,
-                      icon: Icons.backup_outlined,
-                      title: 'Backup & Restore',
-                      subtitle:
-                          'Save all your studies and tracker progress.',
-                      color: Colors.white,
-                      page: const BackupPage(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _mainCard(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required Widget page,
-  }) {
-    return Card(
-      color: color,
-      elevation: 1,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => page,
-            ),
-          );
-
-          refresh();
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 27,
-                backgroundColor: Colors.white,
-                child: Icon(
-                  icon,
-                  color: const Color(0xFF9A5C78),
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(subtitle),
-                  ],
-                ),
-              ),
-              const Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _emptyCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(
-                Icons.menu_book_outlined,
-                size: 40,
-                color: Colors.grey.shade400,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'No daily studies yet.',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Start your first study from Daily Study.',
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _recentStudy(
-    BuildContext context,
-    Map<String, dynamic> study,
-  ) {
-    final chapters = study['chapters'] as List? ?? [];
-
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.book_outlined),
-        title: Text(
-          study['date']?.toString() ?? 'Study',
-        ),
-        subtitle: Text(
-          '${chapters.length} chapter'
-          '${chapters.length == 1 ? '' : 's'}',
-        ),
-        trailing: const Icon(
-          Icons.chevron_right,
-        ),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => DailyStudyPage(
-                existingStudy: study,
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-// ============================================================
-// DAILY STUDY
-// ============================================================
-
-class DailyStudyPage extends StatefulWidget {
-  final Map<String, dynamic>? existingStudy;
-
-  const DailyStudyPage({
-    super.key,
-    this.existingStudy,
-  });
-
-  @override
-  State<DailyStudyPage> createState() =>
-      _DailyStudyPageState();
-}
-
-class _DailyStudyPageState
-    extends State<DailyStudyPage> {
-  late DateTime date;
-
-  final List<ChapterEntry> chapters = [];
-
-  final overall = TextEditingController();
-  final memoryVerse = TextEditingController();
-  final prayer = TextEditingController();
+  List<StudyDay> days = [];
+  bool loading = true;
 
   @override
   void initState() {
     super.initState();
-
-    final existing = widget.existingStudy;
-
-    date = existing == null
-        ? DateTime.now()
-        : DateTime.tryParse(
-              existing['date']?.toString() ?? '',
-            ) ??
-            DateTime.now();
-
-    if (existing != null) {
-      final savedChapters =
-          existing['chapters'] as List? ?? [];
-
-      for (final item in savedChapters) {
-        chapters.add(
-          ChapterEntry.fromMap(
-            Map<String, dynamic>.from(item),
-          ),
-        );
-      }
-
-      overall.text =
-          existing['overall']?.toString() ?? '';
-
-      memoryVerse.text =
-          existing['memoryVerse']?.toString() ?? '';
-
-      prayer.text =
-          existing['prayer']?.toString() ?? '';
-    }
-
-    // Default to three chapters.
-    if (chapters.isEmpty) {
-      addChapter();
-      addChapter();
-      addChapter();
-    }
+    loadData();
   }
 
-  @override
-  void dispose() {
-    for (final chapter in chapters) {
-      chapter.dispose();
-    }
+  Future<void> loadData() async {
+    final loaded = await StudyStorage.loadDays();
 
-    overall.dispose();
-    memoryVerse.dispose();
-    prayer.dispose();
+    if (!mounted) return;
 
-    super.dispose();
-  }
-
-  void addChapter() {
     setState(() {
-      chapters.add(ChapterEntry());
+      days = loaded;
+      loading = false;
     });
   }
 
-  void removeChapter(int index) {
-    if (chapters.length == 1) return;
+  Future<void> saveData() async {
+    await StudyStorage.saveDays(days);
 
-    final removed = chapters.removeAt(index);
-    removed.dispose();
+    if (!mounted) return;
 
     setState(() {});
   }
 
-  Future<void> chooseDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: date,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
+  void updateDay(StudyDay day) {
+    final index = days.indexWhere(
+      (item) => item.dateKey == day.dateKey,
     );
 
-    if (picked != null) {
-      setState(() {
-        date = picked;
-      });
+    setState(() {
+      if (index >= 0) {
+        days[index] = day;
+      } else {
+        days.add(day);
+      }
+    });
+
+    saveData();
+  }
+
+  void deleteDay(String dateKey) {
+    setState(() {
+      days.removeWhere(
+        (day) => day.dateKey == dateKey,
+      );
+    });
+
+    saveData();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    final pages = [
+      HomeScreen(
+        days: days,
+        onOpenDay: (day) {
+          setState(() {
+            currentIndex = 1;
+          });
+        },
+        onDeleteDay: deleteDay,
+      ),
+      DailyStudyScreen(
+        days: days,
+        onSaveDay: updateDay,
+      ),
+      BackupScreen(
+        days: days,
+        onRestored: loadData,
+      ),
+    ];
+
+    return Scaffold(
+      body: SafeArea(
+        child: pages[currentIndex],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: currentIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            currentIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.menu_book_outlined),
+            selectedIcon: Icon(Icons.menu_book),
+            label: 'Study',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.backup_outlined),
+            selectedIcon: Icon(Icons.backup),
+            label: 'Backup',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// HOME SCREEN
+// ============================================================
+
+class HomeScreen extends StatelessWidget {
+  final List<StudyDay> days;
+  final void Function(StudyDay day) onOpenDay;
+  final void Function(String dateKey) onDeleteDay;
+
+  const HomeScreen({
+    super.key,
+    required this.days,
+    required this.onOpenDay,
+    required this.onDeleteDay,
+  });
+
+  String formatDate(String dateKey) {
+    try {
+      final date = DateTime.parse(dateKey);
+
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (_) {
+      return dateKey;
     }
   }
 
-  void save() {
-    final all = AppStorage.studies();
+  @override
+  Widget build(BuildContext context) {
+    final sorted = [...days];
 
-    final study = {
-      'date': date.toIso8601String(),
-      'chapters':
-          chapters.map((e) => e.toMap()).toList(),
-      'overall': overall.text,
-      'memoryVerse': memoryVerse.text,
-      'prayer': prayer.text,
-    };
-
-    final index = all.indexWhere(
-      (item) => item['date'] == study['date'],
+    sorted.sort(
+      (a, b) => b.dateKey.compareTo(a.dateKey),
     );
 
-    if (index >= 0) {
-      all[index] = study;
-    } else {
-      all.add(study);
-    }
+    final completedDays = sorted.length;
 
-    AppStorage.saveStudies(all);
+    final totalChapters = sorted.fold<int>(
+      0,
+      (sum, day) => sum + day.chapters.length,
+    );
+
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar.large(
+          pinned: true,
+          title: const Text('Bitaniya Bible Study'),
+          actions: [
+            IconButton(
+              tooltip: 'New study',
+              onPressed: () {
+                // The bottom Study tab is easier to reach from here.
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Open the Study tab to start today’s study.',
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add),
+            ),
+          ],
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            24,
+          ),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate(
+              [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _StatCard(
+                        icon: Icons.calendar_month,
+                        value: '$completedDays',
+                        label: 'Study days',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _StatCard(
+                        icon: Icons.menu_book,
+                        value: '$totalChapters',
+                        label: 'Chapters',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Your Study History',
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                if (sorted.isEmpty)
+                  _EmptyCard(
+                    icon: Icons.menu_book_outlined,
+                    title: 'No studies yet',
+                    message:
+                        'Start your first Bible study from the Study tab.',
+                  )
+                else
+                  ...sorted.map(
+                    (day) => Card(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        leading: CircleAvatar(
+                          child: Text(
+                            '${day.chapters.length}',
+                          ),
+                        ),
+                        title: Text(
+                          formatDate(day.dateKey),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        subtitle: Text(
+                          day.chapters
+                              .map((c) => c.reference)
+                              .where((x) => x.isNotEmpty)
+                              .join(' • '),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: PopupMenuButton<String>(
+                          onSelected: (value) {
+                            if (value == 'delete') {
+                              _confirmDelete(
+                                context,
+                                day,
+                              );
+                            }
+                          },
+                          itemBuilder: (context) => const [
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Text('Delete'),
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          onOpenDay(day);
+
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => StandaloneDayEditor(
+                                day: day,
+                                onSave: (updated) {
+                                  onOpenDay(updated);
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    StudyDay day,
+  ) async {
+    final answer = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete study?'),
+          content: Text(
+            'Delete the study for ${formatDate(day.dateKey)}?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (answer == true) {
+      onDeleteDay(day.dateKey);
+    }
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+
+  const _StatCard({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Icon(icon, size: 28),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 25,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String message;
+
+  const _EmptyCard({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 48,
+              color: Colors.grey,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// DAILY STUDY SCREEN
+// ============================================================
+
+class DailyStudyScreen extends StatefulWidget {
+  final List<StudyDay> days;
+  final void Function(StudyDay day) onSaveDay;
+
+  const DailyStudyScreen({
+    super.key,
+    required this.days,
+    required this.onSaveDay,
+  });
+
+  @override
+  State<DailyStudyScreen> createState() => _DailyStudyScreenState();
+}
+
+class _DailyStudyScreenState extends State<DailyStudyScreen> {
+  late DateTime selectedDate;
+  StudyDay? currentDay;
+
+  @override
+  void initState() {
+    super.initState();
+
+    selectedDate = DateTime.now();
+
+    _loadSelectedDay();
+  }
+
+  String dateKey(DateTime date) {
+    final y = date.year.toString().padLeft(4, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+
+    return '$y-$m-$d';
+  }
+
+  void _loadSelectedDay() {
+    final key = dateKey(selectedDate);
+
+    final existing = widget.days.where(
+      (day) => day.dateKey == key,
+    );
+
+    if (existing.isNotEmpty) {
+      currentDay = _copyDay(existing.first);
+    } else {
+      currentDay = StudyDay(
+        dateKey: key,
+        chapters: [
+          ChapterEntry(
+            id: DateTime.now().microsecondsSinceEpoch.toString(),
+            reference: '',
+          ),
+          ChapterEntry(
+            id:
+                (DateTime.now().microsecondsSinceEpoch + 1).toString(),
+            reference: '',
+          ),
+          ChapterEntry(
+            id:
+                (DateTime.now().microsecondsSinceEpoch + 2).toString(),
+            reference: '',
+          ),
+        ],
+      );
+    }
+  }
+
+  StudyDay _copyDay(StudyDay day) {
+    return StudyDay(
+      dateKey: day.dateKey,
+      chapters: day.chapters
+          .map(
+            (chapter) => ChapterEntry.fromJson(
+              chapter.toJson(),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      selectedDate = picked;
+      _loadSelectedDay();
+    });
+  }
+
+  void _save() {
+    final day = currentDay;
+
+    if (day == null) return;
+
+    widget.onSaveDay(
+      _copyDay(day),
+    );
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text(
-          'Daily study saved.',
+        content: Text('Study saved'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
+  void _addChapter() {
+    setState(() {
+      currentDay!.chapters.add(
+        ChapterEntry(
+          id: DateTime.now().microsecondsSinceEpoch.toString(),
+          reference: '',
         ),
+      );
+    });
+  }
+
+  void _removeChapter(int index) {
+    if (currentDay!.chapters.length <= 1) {
+      return;
+    }
+
+    setState(() {
+      currentDay!.chapters.removeAt(index);
+    });
+
+    _saveSilently();
+  }
+
+  void _saveSilently() {
+    final day = currentDay;
+
+    if (day != null) {
+      widget.onSaveDay(
+        _copyDay(day),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final day = currentDay;
+
+    if (day == null) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          pinned: true,
+          title: const Text('Daily Study'),
+          actions: [
+            IconButton(
+              tooltip: 'Save',
+              onPressed: _save,
+              icon: const Icon(Icons.save_outlined),
+            ),
+          ],
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            16,
+            12,
+            16,
+            30,
+          ),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate(
+              [
+                _buildDayHeader(),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${day.chapters.length} '
+                        '${day.chapters.length == 1 ? 'chapter' : 'chapters'}',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _addChapter,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add chapter'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...List.generate(
+                  day.chapters.length,
+                  (index) {
+                    final chapter = day.chapters[index];
+
+                    return Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: 14,
+                      ),
+                      child: ChapterCard(
+                        key: ValueKey(chapter.id),
+                        number: index + 1,
+                        chapter: chapter,
+                        canDelete: day.chapters.length > 1,
+                        onChanged: () {
+                          _saveSilently();
+                        },
+                        onDelete: () {
+                          _removeChapter(index);
+                        },
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton.icon(
+                    onPressed: _save,
+                    icon: const Icon(Icons.save),
+                    label: const Text(
+                      'SAVE TODAY’S STUDY',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDayHeader() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Study Day',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: _pickDate,
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Date',
+                  prefixIcon: Icon(Icons.calendar_today),
+                ),
+                child: Text(
+                  '${selectedDate.day}/'
+                  '${selectedDate.month}/'
+                  '${selectedDate.year}',
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Plan as many chapters as you want. '
+              'Three chapters are provided by default, '
+              'but the number is completely optional.',
+              style: TextStyle(
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// STANDALONE DAY EDITOR
+// ============================================================
+
+class StandaloneDayEditor extends StatelessWidget {
+  final StudyDay day;
+  final void Function(StudyDay day) onSave;
+
+  const StandaloneDayEditor({
+    super.key,
+    required this.day,
+    required this.onSave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Edit Study'),
+      ),
+      body: DailyStudyEditorBody(
+        initialDay: day,
+        onSave: (updated) {
+          onSave(updated);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Study saved'),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class DailyStudyEditorBody extends StatefulWidget {
+  final StudyDay initialDay;
+  final void Function(StudyDay day) onSave;
+
+  const DailyStudyEditorBody({
+    super.key,
+    required this.initialDay,
+    required this.onSave,
+  });
+
+  @override
+  State<DailyStudyEditorBody> createState() =>
+      _DailyStudyEditorBodyState();
+}
+
+class _DailyStudyEditorBodyState
+    extends State<DailyStudyEditorBody> {
+  late StudyDay day;
+
+  @override
+  void initState() {
+    super.initState();
+
+    day = StudyDay.fromJson(
+      widget.initialDay.toJson(),
+    );
+  }
+
+  void save() {
+    widget.onSave(
+      StudyDay.fromJson(
+        day.toJson(),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Daily Study'),
-        actions: [
-          IconButton(
-            tooltip: 'Save',
-            onPressed: save,
-            icon: const Icon(Icons.save_outlined),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(14),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 850,
-            ),
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                Card(
-                  color: const Color(0xFFFFF0F5),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Today\'s Bible Study',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        const Text(
-                          'Choose any number of chapters. '
-                          'Three is only the suggested starting point.',
-                        ),
-                        const SizedBox(height: 15),
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        ...List.generate(
+          day.chapters.length,
+          (index) {
+            final chapter = day.chapters[index];
 
-                        InkWell(
-                          onTap: chooseDate,
-                          child: InputDecorator(
-                            decoration:
-                                const InputDecoration(
-                              labelText: 'Study Date',
-                              prefixIcon:
-                                  Icon(Icons.calendar_today),
-                            ),
-                            child: Text(
-                              _dateText(date),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Chapters',
-                        style: TextStyle(
-                          fontSize: 21,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    FilledButton.icon(
-                      onPressed: addChapter,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add'),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 6),
-
-                Text(
-                  '${chapters.length} chapter'
-                  '${chapters.length == 1 ? '' : 's'} today',
-                  style: TextStyle(
-                    color: Colors.grey.shade700,
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                ...List.generate(
-                  chapters.length,
-                  (index) => _chapterCard(index),
-                ),
-
-                const SizedBox(height: 15),
-
-                _simpleSection(
-                  title: 'Overall Takeaway',
-                  icon: Icons.lightbulb_outline,
-                  controller: overall,
-                  hint:
-                      'What is the biggest thing you learned today?',
-                  lines: 5,
-                ),
-
-                _simpleSection(
-                  title: 'Memory Verse',
-                  icon: Icons.bookmark_outline,
-                  controller: memoryVerse,
-                  hint:
-                      'Write a verse you want to remember.',
-                  lines: 3,
-                ),
-
-                _simpleSection(
-                  title: 'Prayer',
-                  icon: Icons.favorite_border,
-                  controller: prayer,
-                  hint:
-                      'Respond to what you learned in prayer.',
-                  lines: 5,
-                ),
-
-                const SizedBox(height: 15),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: save,
-                    icon: const Icon(Icons.save),
-                    label: const Padding(
-                      padding: EdgeInsets.symmetric(
-                        vertical: 14,
-                      ),
-                      child: Text(
-                        'SAVE DAILY STUDY',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _chapterCard(int index) {
-    final chapter = chapters[index];
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 14),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 17,
-                  child: Text('${index + 1}'),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Chapter ${index + 1}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: chapters.length > 1
-                      ? () => removeChapter(index)
-                      : null,
-                  icon: const Icon(
-                    Icons.delete_outline,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            _field(
-              chapter.reference,
-              'Book / Chapter',
-              'Example: Romans 8',
-              1,
-            ),
-
-            const SizedBox(height: 10),
-
-            _field(
-              chapter.summary,
-              'What is happening?',
-              'Briefly summarize the chapter.',
-              4,
-            ),
-
-            const SizedBox(height: 10),
-
-            _field(
-              chapter.noticed,
-              'What stood out to me?',
-              'Important details, repeated ideas, commands, promises...',
-              4,
-            ),
-
-            const SizedBox(height: 10),
-
-            _field(
-              chapter.keyVerse,
-              'Key Verse',
-              'Verse or reference that stood out.',
-              3,
-            ),
-
-            const SizedBox(height: 10),
-
-            _field(
-              chapter.application,
-              'How can I apply this?',
-              'How should this change my thinking or actions?',
-              4,
-            ),
-
-            const SizedBox(height: 8),
-
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          ChapterStudyPage(
-                        initialReference:
-                            chapter.reference.text,
-                      ),
-                    ),
-                  );
+            return Padding(
+              padding: const EdgeInsets.only(
+                bottom: 14,
+              ),
+              child: ChapterCard(
+                key: ValueKey(chapter.id),
+                number: index + 1,
+                chapter: chapter,
+                canDelete: day.chapters.length > 1,
+                onChanged: () {
+                  setState(() {});
                 },
-                icon: const Icon(
-                  Icons.open_in_new,
-                  size: 18,
-                ),
-                label: const Text(
-                  'Open detailed Chapter Study',
-                ),
+                onDelete: () {
+                  setState(() {
+                    day.chapters.removeAt(index);
+                  });
+                },
               ),
-            ),
-          ],
+            );
+          },
         ),
-      ),
-    );
-  }
-
-  Widget _field(
-    TextEditingController controller,
-    String label,
-    String hint,
-    int lines,
-  ) {
-    return TextField(
-      controller: controller,
-      maxLines: lines,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        alignLabelWithHint: true,
-      ),
-    );
-  }
-
-  Widget _simpleSection({
-    required String title,
-    required IconData icon,
-    required TextEditingController controller,
-    required String hint,
-    required int lines,
-  }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+        OutlinedButton.icon(
+          onPressed: () {
+            setState(() {
+              day.chapters.add(
+                ChapterEntry(
+                  id:
+                      DateTime.now().microsecondsSinceEpoch.toString(),
+                  reference: '',
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: controller,
-              maxLines: lines,
-              decoration: InputDecoration(
-                hintText: hint,
-                alignLabelWithHint: true,
-                border: InputBorder.none,
-              ),
-            ),
-          ],
+              );
+            });
+          },
+          icon: const Icon(Icons.add),
+          label: const Text('Add chapter'),
         ),
-      ),
+        const SizedBox(height: 14),
+        FilledButton.icon(
+          onPressed: save,
+          icon: const Icon(Icons.save),
+          label: const Text('Save'),
+        ),
+      ],
     );
-  }
-
-  String _dateText(DateTime d) {
-    return '${d.year}-'
-        '${d.month.toString().padLeft(2, '0')}-'
-        '${d.day.toString().padLeft(2, '0')}';
   }
 }
 
 // ============================================================
-// CHAPTER ENTRY
+// CHAPTER CARD
 // ============================================================
 
-class ChapterEntry {
-  final reference = TextEditingController();
-  final summary = TextEditingController();
-  final noticed = TextEditingController();
-  final keyVerse = TextEditingController();
-  final application = TextEditingController();
+class ChapterCard extends StatefulWidget {
+  final int number;
+  final ChapterEntry chapter;
+  final bool canDelete;
+  final VoidCallback onChanged;
+  final VoidCallback onDelete;
 
-  ChapterEntry();
-
-  ChapterEntry.fromMap(Map<String, dynamic> map) {
-    reference.text =
-        map['reference']?.toString() ?? '';
-    summary.text =
-        map['summary']?.toString() ?? '';
-    noticed.text =
-        map['noticed']?.toString() ?? '';
-    keyVerse.text =
-        map['keyVerse']?.toString() ?? '';
-    application.text =
-        map['application']?.toString() ?? '';
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'reference': reference.text,
-      'summary': summary.text,
-      'noticed': noticed.text,
-      'keyVerse': keyVerse.text,
-      'application': application.text,
-    };
-  }
-
-  void dispose() {
-    reference.dispose();
-    summary.dispose();
-    noticed.dispose();
-    keyVerse.dispose();
-    application.dispose();
-  }
-}
-
-// ============================================================
-// CHAPTER STUDY
-// ============================================================
-
-class ChapterStudyPage extends StatefulWidget {
-  final String? initialReference;
-
-  const ChapterStudyPage({
+  const ChapterCard({
     super.key,
-    this.initialReference,
+    required this.number,
+    required this.chapter,
+    required this.canDelete,
+    required this.onChanged,
+    required this.onDelete,
   });
 
   @override
-  State<ChapterStudyPage> createState() =>
-      _ChapterStudyPageState();
+  State<ChapterCard> createState() => _ChapterCardState();
 }
 
-class _ChapterStudyPageState
-    extends State<ChapterStudyPage> {
-  final book = TextEditingController();
-  final chapter = TextEditingController();
-  final date = TextEditingController();
-  final passage = TextEditingController();
+class _ChapterCardState extends State<ChapterCard> {
+  late final TextEditingController referenceController;
+  late final TextEditingController keyVerseController;
+  late final TextEditingController summaryController;
+  late final TextEditingController observationsController;
+  late final TextEditingController meaningController;
+  late final TextEditingController lessonsController;
+  late final TextEditingController applicationController;
+  late final TextEditingController questionsController;
+  late final TextEditingController prayerController;
 
-  final happening = TextEditingController();
-  final people = TextEditingController();
-  final context = TextEditingController();
-
-  final details = TextEditingController();
-  final repeated = TextEditingController();
-  final important = TextEditingController();
-
-  final mainPoint = TextEditingController();
-  final god = TextEditingController();
-  final christ = TextEditingController();
-  final peopleMeaning = TextEditingController();
-  final difficult = TextEditingController();
-
-  final command = TextEditingController();
-  final example = TextEditingController();
-  final promise = TextEditingController();
-  final application = TextEditingController();
-
-  final keyVerse = TextEditingController();
-  final takeaway = TextEditingController();
-  final furtherStudy = TextEditingController();
-  final prayer = TextEditingController();
+  late final TextEditingController characterNameController;
+  late final TextEditingController characterWhoController;
+  late final TextEditingController characterTraitsController;
+  late final TextEditingController characterActionsController;
+  late final TextEditingController characterLessonsController;
 
   @override
   void initState() {
     super.initState();
 
-    if (widget.initialReference != null &&
-        widget.initialReference!.isNotEmpty) {
-      passage.text = widget.initialReference!;
-    }
+    referenceController = TextEditingController(
+      text: widget.chapter.reference,
+    );
+
+    keyVerseController = TextEditingController(
+      text: widget.chapter.keyVerse,
+    );
+
+    summaryController = TextEditingController(
+      text: widget.chapter.summary,
+    );
+
+    observationsController = TextEditingController(
+      text: widget.chapter.observations,
+    );
+
+    meaningController = TextEditingController(
+      text: widget.chapter.meaning,
+    );
+
+    lessonsController = TextEditingController(
+      text: widget.chapter.lessons,
+    );
+
+    applicationController = TextEditingController(
+      text: widget.chapter.application,
+    );
+
+    questionsController = TextEditingController(
+      text: widget.chapter.questions,
+    );
+
+    prayerController = TextEditingController(
+      text: widget.chapter.prayer,
+    );
+
+    characterNameController = TextEditingController(
+      text: widget.chapter.characterName,
+    );
+
+    characterWhoController = TextEditingController(
+      text: widget.chapter.characterWho,
+    );
+
+    characterTraitsController = TextEditingController(
+      text: widget.chapter.characterTraits,
+    );
+
+    characterActionsController = TextEditingController(
+      text: widget.chapter.characterActions,
+    );
+
+    characterLessonsController = TextEditingController(
+      text: widget.chapter.characterLessons,
+    );
   }
 
   @override
   void dispose() {
-    for (final c in [
-      book,
-      chapter,
-      date,
-      passage,
-      happening,
-      people,
-      context,
-      details,
-      repeated,
-      important,
-      mainPoint,
-      god,
-      christ,
-      peopleMeaning,
-      difficult,
-      command,
-      example,
-      promise,
-      application,
-      keyVerse,
-      takeaway,
-      furtherStudy,
-      prayer,
-    ]) {
-      c.dispose();
-    }
+    referenceController.dispose();
+    keyVerseController.dispose();
+    summaryController.dispose();
+    observationsController.dispose();
+    meaningController.dispose();
+    lessonsController.dispose();
+    applicationController.dispose();
+    questionsController.dispose();
+    prayerController.dispose();
+
+    characterNameController.dispose();
+    characterWhoController.dispose();
+    characterTraitsController.dispose();
+    characterActionsController.dispose();
+    characterLessonsController.dispose();
 
     super.dispose();
   }
 
+  void sync() {
+    widget.chapter.reference = referenceController.text;
+    widget.chapter.keyVerse = keyVerseController.text;
+    widget.chapter.summary = summaryController.text;
+    widget.chapter.observations = observationsController.text;
+    widget.chapter.meaning = meaningController.text;
+    widget.chapter.lessons = lessonsController.text;
+    widget.chapter.application = applicationController.text;
+    widget.chapter.questions = questionsController.text;
+    widget.chapter.prayer = prayerController.text;
+
+    widget.chapter.characterName = characterNameController.text;
+    widget.chapter.characterWho = characterWhoController.text;
+    widget.chapter.characterTraits = characterTraitsController.text;
+    widget.chapter.characterActions = characterActionsController.text;
+    widget.chapter.characterLessons = characterLessonsController.text;
+
+    widget.onChanged();
+  }
+
   Widget field(
-    TextEditingController controller,
     String label,
-    String hint, {
-    int lines = 4,
+    TextEditingController controller, {
+    String? hint,
+    int minLines = 2,
+    int maxLines = 6,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(
-        bottom: 13,
-      ),
+      padding: const EdgeInsets.only(bottom: 12),
       child: TextField(
         controller: controller,
-        maxLines: lines,
+        minLines: minLines,
+        maxLines: maxLines,
+        textCapitalization: TextCapitalization.sentences,
+        onChanged: (_) => sync(),
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
@@ -1059,908 +1283,514 @@ class _ChapterStudyPageState
     );
   }
 
-  Widget section({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required List<Widget> children,
-    bool initiallyExpanded = true,
-  }) {
+  @override
+  Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(
-        bottom: 12,
-      ),
+      clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
-        initiallyExpanded: initiallyExpanded,
-        leading: CircleAvatar(
-          backgroundColor:
-              const Color(0xFFF4E8ED),
-          child: Icon(
-            icon,
-            color: const Color(0xFF74455A),
-          ),
+        initiallyExpanded: true,
+        tilePadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 5,
         ),
         title: Text(
-          title,
+          'Chapter ${widget.number}',
           style: const TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 17,
+            fontSize: 18,
           ),
         ),
-        subtitle: Text(subtitle),
+        subtitle: Text(
+          widget.chapter.reference.isEmpty
+              ? 'Enter chapter reference'
+              : widget.chapter.reference,
+        ),
         childrenPadding: const EdgeInsets.fromLTRB(
           16,
           0,
           16,
-          10,
+          16,
         ),
-        children: children,
+        children: [
+          TextField(
+            controller: referenceController,
+            onChanged: (_) => sync(),
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Bible reference',
+              hintText: 'Example: Matthew 5',
+              prefixIcon: Icon(Icons.menu_book),
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // --------------------------------------------------
+          // MAIN CHAPTER STUDY
+          // --------------------------------------------------
+
+          const _SectionTitle(
+            icon: Icons.search,
+            title: 'Chapter Study',
+          ),
+
+          field(
+            'Key verse',
+            keyVerseController,
+            hint: 'Which verse stands out to you?',
+          ),
+
+          field(
+            'What happens in this chapter?',
+            summaryController,
+            hint: 'Summarize the chapter in your own words.',
+          ),
+
+          field(
+            'What do you notice?',
+            observationsController,
+            hint:
+                'Important people, events, commands, promises, '
+                'repeated words, contrasts, etc.',
+          ),
+
+          field(
+            'What does it mean?',
+            meaningController,
+            hint:
+                'What do you think the main message of the chapter is?',
+          ),
+
+          field(
+            'What does this teach me about God?',
+            lessonsController,
+            hint:
+                'God’s character, His will, His promises, His actions, etc.',
+          ),
+
+          field(
+            'How should I respond?',
+            applicationController,
+            hint:
+                'What can you believe, change, obey, practice, or remember?',
+          ),
+
+          field(
+            'Questions I still have',
+            questionsController,
+            hint:
+                'Write anything you do not understand or want to study later.',
+          ),
+
+          // --------------------------------------------------
+          // CHARACTER STUDY
+          // --------------------------------------------------
+
+          const Divider(height: 25),
+
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            title: const Text(
+              'Character Study',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 17,
+              ),
+            ),
+            subtitle: const Text(
+              'Study a person from this chapter',
+            ),
+            leading: const Icon(Icons.person_outline),
+            children: [
+              const SizedBox(height: 8),
+
+              field(
+                'Character name',
+                characterNameController,
+                hint: 'Example: Peter',
+                minLines: 1,
+                maxLines: 2,
+              ),
+
+              field(
+                'Who is this person?',
+                characterWhoController,
+                hint:
+                    'What do we learn about their identity and role?',
+              ),
+
+              field(
+                'What character traits do I see?',
+                characterTraitsController,
+                hint:
+                    'Faith, courage, weakness, humility, pride, obedience, etc.',
+              ),
+
+              field(
+                'What did this person do?',
+                characterActionsController,
+                hint:
+                    'Important choices, words, actions, successes, failures.',
+              ),
+
+              field(
+                'What can I learn from this person?',
+                characterLessonsController,
+                hint:
+                    'What should I imitate, avoid, or learn from their story?',
+              ),
+            ],
+          ),
+
+          // --------------------------------------------------
+          // PRAYER
+          // --------------------------------------------------
+
+          const Divider(height: 25),
+
+          const _SectionTitle(
+            icon: Icons.favorite_outline,
+            title: 'Response',
+          ),
+
+          field(
+            'Prayer / personal response',
+            prayerController,
+            hint:
+                'Write a short prayer or personal response to what you studied.',
+          ),
+
+          if (widget.canDelete)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: widget.onDelete,
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Remove chapter'),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final IconData icon;
+  final String title;
+
+  const _SectionTitle({
+    required this.icon,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: 6,
+        bottom: 14,
+      ),
+      child: Row(
+        children: [
+          Icon(icon),
+          const SizedBox(width: 10),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// BACKUP SCREEN
+// ============================================================
+
+class BackupScreen extends StatefulWidget {
+  final List<StudyDay> days;
+  final Future<void> Function() onRestored;
+
+  const BackupScreen({
+    super.key,
+    required this.days,
+    required this.onRestored,
+  });
+
+  @override
+  State<BackupScreen> createState() => _BackupScreenState();
+}
+
+class _BackupScreenState extends State<BackupScreen> {
+  late final TextEditingController backupController;
+
+  bool showingBackup = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    backupController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    backupController.dispose();
+    super.dispose();
+  }
+
+  Future<void> createBackup() async {
+    final backup = await StudyStorage.createBackup(
+      widget.days,
+    );
+
+    setState(() {
+      backupController.text = backup;
+      showingBackup = true;
+    });
+  }
+
+  Future<void> copyBackup() async {
+    if (backupController.text.trim().isEmpty) {
+      await createBackup();
+    }
+
+    await Clipboard.setData(
+      ClipboardData(
+        text: backupController.text,
+      ),
+    );
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Backup copied. Paste it into a safe file.',
+        ),
       ),
     );
   }
 
+  Future<void> restoreBackup() async {
+    final text = backupController.text.trim();
+
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Paste your backup first.'),
+        ),
+      );
+
+      return;
+    }
+
+    final success = await StudyStorage.restoreBackup(
+      text,
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      await widget.onRestored();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Backup restored successfully.',
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'That backup is not valid.',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> confirmRestore() async {
+    final answer = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Restore backup?'),
+          content: const Text(
+            'Restoring will replace the current study data '
+            'with the backup data.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text('Restore'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (answer == true) {
+      await restoreBackup();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Chapter Study',
+    return CustomScrollView(
+      slivers: [
+        const SliverAppBar.large(
+          title: Text('Backup & Restore'),
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(14),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 850,
-            ),
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '📖 CHAPTER STUDY',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF74455A),
-                  ),
-                ),
-
-                const SizedBox(height: 5),
-
-                const Text(
-                  'Observe → Understand → Apply → Remember',
-                ),
-
-                const SizedBox(height: 18),
-
-                // ------------------------------------------------
-                // INFORMATION
-                // ------------------------------------------------
-
-                section(
-                  title: 'Chapter Information',
-                  subtitle:
-                      'Start with the basic information.',
-                  icon: Icons.menu_book_outlined,
-                  children: [
-                    field(
-                      book,
-                      'Book',
-                      'Example: Romans',
-                      lines: 1,
-                    ),
-                    field(
-                      chapter,
-                      'Chapter',
-                      'Example: 8',
-                      lines: 1,
-                    ),
-                    field(
-                      date,
-                      'Date',
-                      'When did you study it?',
-                      lines: 1,
-                    ),
-                    field(
-                      passage,
-                      'Passage',
-                      'Optional verses or section.',
-                      lines: 1,
-                    ),
-                  ],
-                ),
-
-                // ------------------------------------------------
-                // WHAT IS HAPPENING
-                // ------------------------------------------------
-
-                section(
-                  title: '1. What Is Happening?',
-                  subtitle:
-                      'Understand the chapter in its context.',
-                  icon: Icons.visibility_outlined,
-                  children: [
-                    field(
-                      happening,
-                      'What is the main story, argument, or message?',
-                      'Summarize what is happening.',
-                      lines: 5,
-                    ),
-                    field(
-                      people,
-                      'Who are the important people?',
-                      'Who speaks, acts, teaches, or responds?',
-                      lines: 4,
-                    ),
-                    field(
-                      context,
-                      'What is happening before and after this chapter?',
-                      'Think about the surrounding context.',
-                      lines: 4,
-                    ),
-                  ],
-                ),
-
-                // ------------------------------------------------
-                // WHAT DOES TEXT SAY
-                // ------------------------------------------------
-
-                section(
-                  title: '2. What Does the Text Say?',
-                  subtitle:
-                      'Look carefully at the details.',
-                  icon: Icons.search_outlined,
-                  children: [
-                    field(
-                      details,
-                      'What words, ideas, commands, promises, or warnings stand out?',
-                      'Write down important observations.',
-                      lines: 5,
-                    ),
-                    field(
-                      repeated,
-                      'What is repeated or emphasized?',
-                      'Notice repeated words, ideas, or themes.',
-                      lines: 4,
-                    ),
-                    field(
-                      important,
-                      'What important details might I otherwise overlook?',
-                      'Slow down and look carefully.',
-                      lines: 4,
-                    ),
-                  ],
-                ),
-
-                // ------------------------------------------------
-                // WHAT DOES IT MEAN
-                // ------------------------------------------------
-
-                section(
-                  title: '3. What Does It Mean?',
-                  subtitle:
-                      'Think about the meaning of the passage.',
-                  icon: Icons.lightbulb_outline,
-                  children: [
-                    field(
-                      mainPoint,
-                      'What is the main point the author is making?',
-                      'What is the central message?',
-                      lines: 5,
-                    ),
-                    field(
-                      god,
-                      'What does this teach about God?',
-                      'His character, works, promises, holiness, etc.',
-                      lines: 4,
-                    ),
-                    field(
-                      christ,
-                      'What does this teach about Christ?',
-                      'His identity, work, words, example, etc.',
-                      lines: 4,
-                    ),
-                    field(
-                      peopleMeaning,
-                      'What does this teach about people?',
-                      'Human nature, sin, faith, obedience, relationships, etc.',
-                      lines: 4,
-                    ),
-                    field(
-                      difficult,
-                      'Is there anything difficult or confusing to investigate?',
-                      'Write questions instead of guessing the answer.',
-                      lines: 4,
-                    ),
-                  ],
-                ),
-
-                // ------------------------------------------------
-                // APPLY
-                // ------------------------------------------------
-
-                section(
-                  title: '4. What Should I Do With It?',
-                  subtitle:
-                      'Turn understanding into action.',
-                  icon: Icons.directions_outlined,
-                  children: [
-                    field(
-                      command,
-                      'Is there a command I should obey?',
-                      'What does the passage tell me to do?',
-                      lines: 4,
-                    ),
-                    field(
-                      example,
-                      'Is there an example I should follow or avoid?',
-                      'Consider both positive and negative examples.',
-                      lines: 4,
-                    ),
-                    field(
-                      promise,
-                      'Is there a promise or truth I should trust?',
-                      'What should I believe or remember?',
-                      lines: 4,
-                    ),
-                    field(
-                      application,
-                      'How should this change the way I think or live?',
-                      'Give yourself a specific application.',
-                      lines: 5,
-                    ),
-                  ],
-                ),
-
-                // ------------------------------------------------
-                // REMEMBER
-                // ------------------------------------------------
-
-                section(
-                  title: '5. Remember',
-                  subtitle:
-                      'Keep the most important things.',
-                  icon: Icons.bookmark_outline,
-                  children: [
-                    field(
-                      keyVerse,
-                      'Key Verse',
-                      'Verse or passage you want to remember.',
-                      lines: 3,
-                    ),
-                    field(
-                      takeaway,
-                      'Biggest Takeaway',
-                      'If you could remember one thing, what would it be?',
-                      lines: 4,
-                    ),
-                    field(
-                      furtherStudy,
-                      'Questions for Further Study',
-                      'Things you want to investigate later.',
-                      lines: 4,
-                    ),
-                  ],
-                ),
-
-                // ------------------------------------------------
-                // RESPONSE
-                // ------------------------------------------------
-
-                section(
-                  title: '6. Personal Response',
-                  subtitle:
-                      'Respond to what you learned.',
-                  icon: Icons.favorite_border,
-                  children: [
-                    field(
-                      prayer,
-                      'Prayer',
-                      'Talk to God about what you learned.',
-                      lines: 6,
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                const Card(
-                  color: Color(0xFFFFF1F5),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            30,
+          ),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate(
+              [
+                Card(
                   child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Row(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
                       crossAxisAlignment:
                           CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.info_outline,
+                        const Icon(
+                          Icons.security,
+                          size: 38,
                         ),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Not every question needs an answer for every chapter. '
-                            'Skip anything that does not apply and focus on what the text actually says.',
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Protect your Bible studies',
+                          style: TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.bold,
                           ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${widget.days.length} study days '
+                          'are currently saved.',
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Create a backup and keep the text somewhere '
+                          'safe. You can paste it back here later to '
+                          'restore your studies.',
                         ),
                       ],
                     ),
                   ),
                 ),
+                const SizedBox(height: 14),
 
-                const SizedBox(height: 30),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+                SizedBox(
+                  height: 52,
+                  child: FilledButton.icon(
+                    onPressed: createBackup,
+                    icon: const Icon(Icons.backup),
+                    label: const Text(
+                      'CREATE BACKUP',
+                    ),
+                  ),
+                ),
 
-// ============================================================
-// NEW TESTAMENT TRACKER
-// ============================================================
+                const SizedBox(height: 10),
 
-class TrackerPage extends StatefulWidget {
-  const TrackerPage({super.key});
+                SizedBox(
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    onPressed: copyBackup,
+                    icon: const Icon(Icons.copy),
+                    label: const Text(
+                      'COPY BACKUP',
+                    ),
+                  ),
+                ),
 
-  @override
-  State<TrackerPage> createState() =>
-      _TrackerPageState();
-}
+                const SizedBox(height: 22),
 
-class _TrackerPageState
-    extends State<TrackerPage> {
-  final Map<String, int> books = {
-    'Matthew': 28,
-    'Mark': 16,
-    'Luke': 24,
-    'John': 21,
-    'Acts': 28,
-    'Romans': 16,
-    '1 Corinthians': 16,
-    '2 Corinthians': 13,
-    'Galatians': 6,
-    'Ephesians': 6,
-    'Philippians': 4,
-    'Colossians': 4,
-    '1 Thessalonians': 5,
-    '2 Thessalonians': 3,
-    '1 Timothy': 6,
-    '2 Timothy': 4,
-    'Titus': 3,
-    'Philemon': 1,
-    'Hebrews': 13,
-    'James': 5,
-    '1 Peter': 5,
-    '2 Peter': 3,
-    '1 John': 5,
-    '2 John': 1,
-    '3 John': 1,
-    'Jude': 1,
-    'Revelation': 22,
-  };
+                const Text(
+                  'Restore',
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
 
-  late Set<String> completed;
+                const SizedBox(height: 8),
 
-  @override
-  void initState() {
-    super.initState();
-    completed = AppStorage.tracker();
-  }
+                const Text(
+                  'Paste a backup below, then press Restore.',
+                ),
 
-  int get total =>
-      books.values.fold(
-        0,
-        (sum, chapters) => sum + chapters,
-      );
+                const SizedBox(height: 12),
 
-  double get progress =>
-      total == 0 ? 0 : completed.length / total;
+                TextField(
+                  controller: backupController,
+                  minLines: 12,
+                  maxLines: 25,
+                  decoration: const InputDecoration(
+                    labelText: 'Backup data',
+                    hintText: 'Paste your backup here',
+                    alignLabelWithHint: true,
+                  ),
+                ),
 
-  void toggle(
-    String book,
-    int chapter,
-  ) {
-    final key = '$book|$chapter';
+                const SizedBox(height: 10),
 
-    setState(() {
-      if (completed.contains(key)) {
-        completed.remove(key);
-      } else {
-        completed.add(key);
-      }
-    });
+                SizedBox(
+                  height: 52,
+                  child: FilledButton.icon(
+                    onPressed: confirmRestore,
+                    icon: const Icon(Icons.restore),
+                    label: const Text(
+                      'RESTORE BACKUP',
+                    ),
+                  ),
+                ),
 
-    AppStorage.saveTracker(completed);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'New Testament Tracker',
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Reset',
-            icon: const Icon(
-              Icons.refresh,
-            ),
-            onPressed: reset,
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(14),
-        children: [
-          Card(
-            color: const Color(0xFFEAF2FF),
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                children: [
+                if (showingBackup) ...[
+                  const SizedBox(height: 20),
                   const Text(
-                    'NEW TESTAMENT PROGRESS',
+                    'Your backup is ready',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 10,
-                    borderRadius:
-                        BorderRadius.circular(10),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    '${completed.length} / $total chapters '
-                    '(${(progress * 100).toStringAsFixed(1)}%)',
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Copy the text above and save it somewhere safe.',
                   ),
                 ],
-              ),
+              ],
             ),
-          ),
-          const SizedBox(height: 12),
-          ...books.entries.map(
-            (entry) => bookCard(
-              entry.key,
-              entry.value,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget bookCard(
-    String book,
-    int chapterCount,
-  ) {
-    final finished = List.generate(
-      chapterCount,
-      (i) => i + 1,
-    ).where(
-      (chapter) =>
-          completed.contains('$book|$chapter'),
-    ).length;
-
-    return Card(
-      margin: const EdgeInsets.only(
-        bottom: 10,
-      ),
-      child: ExpansionTile(
-        title: Text(
-          book,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
           ),
         ),
-        subtitle: Text(
-          '$finished / $chapterCount completed',
-        ),
-        childrenPadding:
-            const EdgeInsets.all(12),
-        children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: List.generate(
-              chapterCount,
-              (i) {
-                final chapter = i + 1;
-                final done = completed.contains(
-                  '$book|$chapter',
-                );
-
-                return InkWell(
-                  onTap: () =>
-                      toggle(book, chapter),
-                  borderRadius:
-                      BorderRadius.circular(10),
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    alignment:
-                        Alignment.center,
-                    decoration: BoxDecoration(
-                      color: done
-                          ? Colors.green.shade100
-                          : Colors.grey.shade100,
-                      borderRadius:
-                          BorderRadius.circular(
-                        10,
-                      ),
-                      border: Border.all(
-                        color: done
-                            ? Colors.green
-                            : Colors.grey.shade400,
-                      ),
-                    ),
-                    child: done
-                        ? const Icon(
-                            Icons.check,
-                            color: Colors.green,
-                          )
-                        : Text('$chapter'),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void reset() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text(
-          'Reset tracker?',
-        ),
-        content: const Text(
-          'All completed chapters will be unmarked.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              setState(() {
-                completed.clear();
-              });
-
-              AppStorage.saveTracker(
-                completed,
-              );
-
-              Navigator.pop(context);
-            },
-            child: const Text('Reset'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ============================================================
-// BACKUP & RESTORE
-// ============================================================
-
-class BackupPage extends StatefulWidget {
-  const BackupPage({super.key});
-
-  @override
-  State<BackupPage> createState() =>
-      _BackupPageState();
-}
-
-class _BackupPageState
-    extends State<BackupPage> {
-  void downloadBackup() {
-    final data = AppStorage.backup();
-
-    final json = const JsonEncoder
-        .withIndent('  ')
-        .convert(data);
-
-    final blob = html.Blob(
-      [json],
-      'application/json',
-    );
-
-    final url =
-        html.Url.createObjectUrlFromBlob(
-      blob,
-    );
-
-    final anchor =
-        html.AnchorElement(href: url)
-          ..setAttribute(
-            'download',
-            'bitaniya_bible_study_backup.json',
-          )
-          ..click();
-
-    html.Url.revokeObjectUrl(url);
-
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Backup downloaded.',
-        ),
-      ),
-    );
-  }
-
-  void restoreBackup() {
-    final input =
-        html.FileUploadInputElement();
-
-    input.accept = '.json,application/json';
-    input.click();
-
-    input.onChange.listen((event) {
-      final files = input.files;
-
-      if (files == null ||
-          files.isEmpty) {
-        return;
-      }
-
-      final reader = html.FileReader();
-
-      reader.readAsText(files.first);
-
-      reader.onLoadEnd.listen((event) {
-        try {
-          final result = reader.result;
-
-          if (result is! String) {
-            throw Exception();
-          }
-
-          final decoded =
-              jsonDecode(result);
-
-          if (decoded is! Map) {
-            throw Exception();
-          }
-
-          final success =
-              AppStorage.restore(
-            Map<String, dynamic>.from(
-              decoded,
-            ),
-          );
-
-          if (!mounted) return;
-
-          ScaffoldMessenger.of(context)
-              .showSnackBar(
-            SnackBar(
-              content: Text(
-                success
-                    ? 'Backup restored successfully. '
-                        'Return to the home page to see your data.'
-                    : 'Could not restore the backup.',
-              ),
-            ),
-          );
-        } catch (_) {
-          if (!mounted) return;
-
-          ScaffoldMessenger.of(context)
-              .showSnackBar(
-            const SnackBar(
-              content: Text(
-                'This backup file could not be read.',
-              ),
-            ),
-          );
-        }
-      });
-    });
-  }
-
-  void deleteEverything() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text(
-          'Delete everything?',
-        ),
-        content: const Text(
-          'This removes all daily studies and tracker progress '
-          'from this browser. Make a backup first if you need it.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style:
-                FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            onPressed: () {
-              html.window.localStorage
-                  .remove(
-                AppStorage.studiesKey,
-              );
-
-              html.window.localStorage
-                  .remove(
-                AppStorage.trackerKey,
-              );
-
-              Navigator.pop(context);
-
-              setState(() {});
-
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'All local data deleted.',
-                  ),
-                ),
-              );
-            },
-            child: const Text(
-              'Delete',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final studies =
-        AppStorage.studies();
-
-    final tracker =
-        AppStorage.tracker();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Backup & Restore',
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Text(
-            'Backup & Restore',
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          const Text(
-            'Your studies are saved in this browser. '
-            'Use Backup to create a file you can keep safely '
-            'or move to another device.',
-          ),
-
-          const SizedBox(height: 20),
-
-          Card(
-            child: ListTile(
-              leading: const Icon(
-                Icons.today,
-              ),
-              title: const Text(
-                'Daily Studies',
-              ),
-              subtitle: Text(
-                '${studies.length} saved',
-              ),
-            ),
-          ),
-
-          Card(
-            child: ListTile(
-              leading: const Icon(
-                Icons.check_circle_outline,
-              ),
-              title: const Text(
-                'Tracker Progress',
-              ),
-              subtitle: Text(
-                '${tracker.length} chapters completed',
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          FilledButton.icon(
-            onPressed: downloadBackup,
-            icon: const Icon(
-              Icons.download,
-            ),
-            label: const Padding(
-              padding: EdgeInsets.all(14),
-              child: Text(
-                'DOWNLOAD BACKUP',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          OutlinedButton.icon(
-            onPressed: restoreBackup,
-            icon: const Icon(
-              Icons.upload,
-            ),
-            label: const Padding(
-              padding: EdgeInsets.all(14),
-              child: Text(
-                'RESTORE BACKUP',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 30),
-
-          const Divider(),
-
-          const SizedBox(height: 20),
-
-          OutlinedButton.icon(
-            style:
-                OutlinedButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
-            onPressed: deleteEverything,
-            icon: const Icon(
-              Icons.delete_forever,
-            ),
-            label: const Text(
-              'DELETE ALL LOCAL DATA',
-            ),
-          ),
-
-          const SizedBox(height: 15),
-
-          Text(
-            'Important: your data is stored locally in the browser. '
-            'Make regular backups so you do not lose your studies '
-            'if browser storage is cleared.',
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              fontSize: 13,
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }
