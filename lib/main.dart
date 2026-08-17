@@ -1,7 +1,5 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -18,7 +16,8 @@ class BitaniyaBibleStudyApp extends StatefulWidget {
 }
 
 class _BitaniyaBibleStudyAppState extends State<BitaniyaBibleStudyApp> {
-  ThemeMode _themeMode = ThemeMode.system;
+  static const _themeKey = 'bitaniya_dark_mode';
+  ThemeMode _themeMode = ThemeMode.light;
 
   @override
   void initState() {
@@ -28,35 +27,24 @@ class _BitaniyaBibleStudyAppState extends State<BitaniyaBibleStudyApp> {
 
   Future<void> _loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    final value = prefs.getString('themeMode') ?? 'system';
+    final dark = prefs.getBool(_themeKey) ?? false;
 
-    setState(() {
-      if (value == 'light') {
-        _themeMode = ThemeMode.light;
-      } else if (value == 'dark') {
-        _themeMode = ThemeMode.dark;
-      } else {
-        _themeMode = ThemeMode.system;
-      }
-    });
+    if (mounted) {
+      setState(() {
+        _themeMode = dark ? ThemeMode.dark : ThemeMode.light;
+      });
+    }
   }
 
-  Future<void> _setTheme(ThemeMode mode) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    String value = 'system';
-
-    if (mode == ThemeMode.light) {
-      value = 'light';
-    } else if (mode == ThemeMode.dark) {
-      value = 'dark';
-    }
-
-    await prefs.setString('themeMode', value);
+  Future<void> _toggleTheme() async {
+    final dark = _themeMode != ThemeMode.dark;
 
     setState(() {
-      _themeMode = mode;
+      _themeMode = dark ? ThemeMode.dark : ThemeMode.light;
     });
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_themeKey, dark);
   }
 
   @override
@@ -64,104 +52,182 @@ class _BitaniyaBibleStudyAppState extends State<BitaniyaBibleStudyApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Bitaniya Bible Study',
+
+      theme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: const Color(0xFFFCF9F6),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.pink,
+          brightness: Brightness.light,
+        ),
+        inputDecorationTheme: const InputDecorationTheme(
+          border: OutlineInputBorder(),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+        cardTheme: const CardThemeData(
+          color: Colors.white,
+        ),
+      ),
+
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.pink,
+          brightness: Brightness.dark,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: const OutlineInputBorder(),
+          filled: true,
+          fillColor: Colors.grey.shade900,
+        ),
+        cardTheme: CardThemeData(
+          color: Colors.grey.shade900,
+        ),
+      ),
+
       themeMode: _themeMode,
-      theme: _lightTheme(),
-      darkTheme: _darkTheme(),
-      home: HomeScreen(
-        themeMode: _themeMode,
-        onThemeChanged: _setTheme,
-      ),
-    );
-  }
 
-  ThemeData _lightTheme() {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      colorSchemeSeed: Colors.deepPurple,
-      scaffoldBackgroundColor: const Color(0xFFF7F5FA),
-      cardTheme: const CardThemeData(
-        elevation: 1,
-        margin: EdgeInsets.symmetric(vertical: 6),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(width: 2),
-        ),
-      ),
-    );
-  }
-
-  ThemeData _darkTheme() {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      colorSchemeSeed: Colors.deepPurple,
-      scaffoldBackgroundColor: const Color(0xFF121212),
-      cardTheme: const CardThemeData(
-        elevation: 1,
-        margin: EdgeInsets.symmetric(vertical: 6),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(width: 2),
-        ),
+      home: HomePage(
+        isDarkMode: _themeMode == ThemeMode.dark,
+        onToggleTheme: _toggleTheme,
       ),
     );
   }
 }
 
-class HomeScreen extends StatefulWidget {
-  final ThemeMode themeMode;
-  final Future<void> Function(ThemeMode) onThemeChanged;
+// ============================================================
+// HOME PAGE
+// ============================================================
 
-  const HomeScreen({
+class HomePage extends StatefulWidget {
+  final bool isDarkMode;
+  final VoidCallback onToggleTheme;
+
+  const HomePage({
     super.key,
-    required this.themeMode,
-    required this.onThemeChanged,
+    required this.isDarkMode,
+    required this.onToggleTheme,
   });
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
-  final StudyStorage _storage = StudyStorage();
+  final List<StudyDay> _studies = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStudies();
+  }
+
+  Future<void> _loadStudies() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('bitaniya_studies');
+
+    if (saved != null) {
+      final decoded = jsonDecode(saved);
+
+      if (decoded is List) {
+        setState(() {
+          _studies.clear();
+
+          for (final item in decoded) {
+            _studies.add(
+              StudyDay.fromJson(
+                Map<String, dynamic>.from(item),
+              ),
+            );
+          }
+        });
+      }
+    }
+  }
+
+  Future<void> _saveStudies() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final encoded = jsonEncode(
+      _studies.map((e) => e.toJson()).toList(),
+    );
+
+    await prefs.setString(
+      'bitaniya_studies',
+      encoded,
+    );
+  }
+
+  Future<void> _addStudy() async {
+    final result = await Navigator.push<StudyDay>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DailyStudyPage(
+          study: null,
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _studies.add(result);
+      });
+
+      await _saveStudies();
+    }
+  }
+
+  Future<void> _editStudy(int index) async {
+    final result = await Navigator.push<StudyDay>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DailyStudyPage(
+          study: _studies[index],
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _studies[index] = result;
+      });
+
+      await _saveStudies();
+    }
+  }
+
+  Future<void> _deleteStudy(int index) async {
+    setState(() {
+      _studies.removeAt(index);
+    });
+
+    await _saveStudies();
+  }
 
   @override
   Widget build(BuildContext context) {
     final pages = [
-      DailyStudyScreen(storage: _storage),
-      TrackerScreen(storage: _storage),
-      BackupScreen(storage: _storage),
-      SettingsScreen(
-        themeMode: widget.themeMode,
-        onThemeChanged: widget.onThemeChanged,
-      ),
+      _buildHome(),
+      _buildStudyTab(),
+      const BackupPage(),
     ];
 
     return Scaffold(
-      body: SafeArea(
-        child: pages[_currentIndex],
-      ),
+      body: pages[_currentIndex],
+
+      floatingActionButton: _currentIndex == 0
+          ? FloatingActionButton(
+              onPressed: _addStudy,
+              child: const Icon(Icons.add),
+            )
+          : null,
+
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
@@ -171,24 +237,307 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.menu_book_outlined),
-            selectedIcon: Icon(Icons.menu_book),
-            label: 'Today',
+            icon: Icon(Icons.home),
+            label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart),
-            label: 'Tracker',
+            icon: Icon(Icons.menu_book),
+            label: 'Study',
           ),
           NavigationDestination(
-            icon: Icon(Icons.backup_outlined),
-            selectedIcon: Icon(Icons.backup),
+            icon: Icon(Icons.cloud_upload),
             label: 'Backup',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHome() {
+    final totalChapters = _studies.fold<int>(
+      0,
+      (sum, study) => sum + study.chapters.length,
+    );
+
+    return SafeArea(
+      child: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            title: const Text(
+              'Bitaniya Bible Study',
+            ),
+            actions: [
+              IconButton(
+                tooltip: widget.isDarkMode
+                    ? 'Switch to light mode'
+                    : 'Switch to dark mode',
+                onPressed: widget.onToggleTheme,
+                icon: Icon(
+                  widget.isDarkMode
+                      ? Icons.light_mode
+                      : Icons.dark_mode,
+                ),
+              ),
+            ],
+          ),
+
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                Row(
+                  children: [
+                    Expanded(
+                      child: _statCard(
+                        Icons.calendar_month,
+                        '${_studies.length}',
+                        'Study days',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _statCard(
+                        Icons.menu_book,
+                        '$totalChapters',
+                        'Chapters',
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 28),
+
+                Text(
+                  'Your Study History',
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+
+                const SizedBox(height: 12),
+
+                if (_studies.isEmpty)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 60,
+                        horizontal: 20,
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.menu_book,
+                            size: 70,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No studies yet',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Start your first Bible study from the Study tab.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  ...List.generate(
+                    _studies.length,
+                    (index) => _studyHistoryCard(
+                      _studies[index],
+                      index,
+                    ),
+                  ),
+              ]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statCard(
+    IconData icon,
+    String number,
+    String label,
+  ) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          vertical: 24,
+          horizontal: 12,
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 32,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              number,
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(label),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _studyHistoryCard(
+    StudyDay study,
+    int index,
+  ) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: const CircleAvatar(
+          child: Icon(Icons.menu_book),
+        ),
+        title: Text(
+          study.title.isEmpty
+              ? 'Bible Study'
+              : study.title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          '${study.date} • ${study.chapters.length} chapter(s)',
+        ),
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == 'edit') {
+              _editStudy(index);
+            }
+
+            if (value == 'delete') {
+              _deleteStudy(index);
+            }
+          },
+          itemBuilder: (_) => const [
+            PopupMenuItem(
+              value: 'edit',
+              child: Text('Edit'),
+            ),
+            PopupMenuItem(
+              value: 'delete',
+              child: Text('Delete'),
+            ),
+          ],
+        ),
+        onTap: () {
+          _editStudy(index);
+        },
+      ),
+    );
+  }
+
+  Widget _buildStudyTab() {
+    return SafeArea(
+      child: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            title: const Text('Bible Study'),
+            actions: [
+              IconButton(
+                onPressed: widget.onToggleTheme,
+                icon: Icon(
+                  widget.isDarkMode
+                      ? Icons.light_mode
+                      : Icons.dark_mode,
+                ),
+              ),
+            ],
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        const Icon(
+                          Icons.menu_book,
+                          size: 60,
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Daily Bible Study',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Choose your date and chapters, then study each chapter using the sections below.',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 20),
+                        FilledButton.icon(
+                          onPressed: _addStudy,
+                          icon: const Icon(Icons.add),
+                          label: const Text(
+                            'Start Today\'s Study',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                Card(
+                  child: ListTile(
+                    leading: const Icon(
+                      Icons.check_circle_outline,
+                    ),
+                    title: const Text(
+                      'New Testament Reading Tracker',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Track chapters you have completed.',
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const NewTestamentTrackerPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ]),
+            ),
           ),
         ],
       ),
@@ -197,712 +546,194 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ============================================================
-// STORAGE
-// ============================================================
-
-class StudyStorage {
-  static const String _studiesKey = 'bbitaniya_studies';
-
-  Future<List<StudyDay>> loadStudies() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_studiesKey);
-
-    if (raw == null || raw.isEmpty) {
-      return [];
-    }
-
-    try {
-      final decoded = jsonDecode(raw);
-
-      if (decoded is! List) {
-        return [];
-      }
-
-      return decoded
-          .map((item) => StudyDay.fromJson(item))
-          .toList()
-          .cast<StudyDay>();
-    } catch (_) {
-      return [];
-    }
-  }
-
-  Future<void> saveStudies(List<StudyDay> studies) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final data = studies.map((e) => e.toJson()).toList();
-
-    await prefs.setString(
-      _studiesKey,
-      jsonEncode(data),
-    );
-  }
-
-  Future<void> clearAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_studiesKey);
-  }
-
-  Future<String> createBackup() async {
-    final studies = await loadStudies();
-
-    return const JsonEncoder.withIndent('  ').convert({
-      'app': 'Bitaniya Bible Study',
-      'version': 1,
-      'created': DateTime.now().toIso8601String(),
-      'studies': studies.map((e) => e.toJson()).toList(),
-    });
-  }
-
-  Future<bool> restoreBackup(String backup) async {
-    try {
-      final decoded = jsonDecode(backup);
-
-      if (decoded is! Map) {
-        return false;
-      }
-
-      final rawStudies = decoded['studies'];
-
-      if (rawStudies is! List) {
-        return false;
-      }
-
-      final studies = rawStudies
-          .map((item) => StudyDay.fromJson(item))
-          .toList()
-          .cast<StudyDay>();
-
-      await saveStudies(studies);
-
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-}
-
-// ============================================================
-// MODELS
+// DATA MODEL
 // ============================================================
 
 class StudyDay {
+  String title;
   String date;
-  List<ChapterStudy> chapters;
+  List<String> chapters;
+
+  String characterStudy;
+  String chapterStudy;
+  String quietTime;
+  String reflection;
 
   StudyDay({
+    required this.title,
     required this.date,
     required this.chapters,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'date': date,
-      'chapters': chapters.map((e) => e.toJson()).toList(),
-    };
-  }
-
-  factory StudyDay.fromJson(Map<dynamic, dynamic> json) {
-    final rawChapters = json['chapters'];
-
-    return StudyDay(
-      date: json['date']?.toString() ?? '',
-      chapters: rawChapters is List
-          ? rawChapters
-              .map((e) => ChapterStudy.fromJson(e))
-              .toList()
-              .cast<ChapterStudy>()
-          : [],
-    );
-  }
-}
-
-class ChapterStudy {
-  String book;
-  String chapter;
-  String mainIdea;
-  String observations;
-  String keyVerses;
-  String meaning;
-  String application;
-  String prayer;
-  String characterStudy;
-  String questions;
-
-  ChapterStudy({
-    this.book = '',
-    this.chapter = '',
-    this.mainIdea = '',
-    this.observations = '',
-    this.keyVerses = '',
-    this.meaning = '',
-    this.application = '',
-    this.prayer = '',
     this.characterStudy = '',
-    this.questions = '',
+    this.chapterStudy = '',
+    this.quietTime = '',
+    this.reflection = '',
   });
 
   Map<String, dynamic> toJson() {
     return {
-      'book': book,
-      'chapter': chapter,
-      'mainIdea': mainIdea,
-      'observations': observations,
-      'keyVerses': keyVerses,
-      'meaning': meaning,
-      'application': application,
-      'prayer': prayer,
+      'title': title,
+      'date': date,
+      'chapters': chapters,
       'characterStudy': characterStudy,
-      'questions': questions,
+      'chapterStudy': chapterStudy,
+      'quietTime': quietTime,
+      'reflection': reflection,
     };
   }
 
-  factory ChapterStudy.fromJson(Map<dynamic, dynamic> json) {
-    return ChapterStudy(
-      book: json['book']?.toString() ?? '',
-      chapter: json['chapter']?.toString() ?? '',
-      mainIdea: json['mainIdea']?.toString() ?? '',
-      observations: json['observations']?.toString() ?? '',
-      keyVerses: json['keyVerses']?.toString() ?? '',
-      meaning: json['meaning']?.toString() ?? '',
-      application: json['application']?.toString() ?? '',
-      prayer: json['prayer']?.toString() ?? '',
-      characterStudy: json['characterStudy']?.toString() ?? '',
-      questions: json['questions']?.toString() ?? '',
-    );
-  }
-}
-
-// ============================================================
-// DAILY STUDY
-// ============================================================
-
-class DailyStudyScreen extends StatefulWidget {
-  final StudyStorage storage;
-
-  const DailyStudyScreen({
-    super.key,
-    required this.storage,
-  });
-
-  @override
-  State<DailyStudyScreen> createState() => _DailyStudyScreenState();
-}
-
-class _DailyStudyScreenState extends State<DailyStudyScreen> {
-  List<StudyDay> _studies = [];
-  DateTime _selectedDate = DateTime.now();
-
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  String _dateString(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  }
-
-  Future<void> _load() async {
-    final studies = await widget.storage.loadStudies();
-
-    if (!mounted) return;
-
-    setState(() {
-      _studies = studies;
-      _loading = false;
-    });
-  }
-
-  StudyDay? get _todayStudy {
-    final date = _dateString(_selectedDate);
-
-    for (final study in _studies) {
-      if (study.date == date) {
-        return study;
-      }
-    }
-
-    return null;
-  }
-
-  Future<StudyDay> _getOrCreateDay() async {
-    final date = _dateString(_selectedDate);
-
-    for (final study in _studies) {
-      if (study.date == date) {
-        return study;
-      }
-    }
-
-    final newDay = StudyDay(
-      date: date,
-      chapters: [],
-    );
-
-    _studies.add(newDay);
-    await widget.storage.saveStudies(_studies);
-
-    return newDay;
-  }
-
-  Future<void> _addChapter() async {
-    final day = await _getOrCreateDay();
-
-    setState(() {
-      day.chapters.add(
-        ChapterStudy(),
-      );
-    });
-
-    await widget.storage.saveStudies(_studies);
-
-    if (!mounted) return;
-
-    _openChapterEditor(
-      day,
-      day.chapters.length - 1,
-    );
-  }
-
-  Future<void> _openChapterEditor(
-    StudyDay day,
-    int index,
-  ) async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChapterStudyScreen(
-          chapter: day.chapters[index],
-          chapterNumber: index + 1,
-          onSave: () async {
-            await widget.storage.saveStudies(_studies);
-
-            if (mounted) {
-              setState(() {});
-            }
-          },
-        ),
-      ),
-    );
-
-    if (mounted) {
-      await _load();
-    }
-  }
-
-  Future<void> _deleteChapter(
-    StudyDay day,
-    int index,
-  ) async {
-    setState(() {
-      day.chapters.removeAt(index);
-    });
-
-    await widget.storage.saveStudies(_studies);
-  }
-
-  Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-    );
-
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    }
-
-    final day = _todayStudy;
-
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(
-          pinned: true,
-          title: const Text(
-            'Bitaniya Bible Study',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          actions: [
-            IconButton(
-              tooltip: 'Choose date',
-              onPressed: _selectDate,
-              icon: const Icon(Icons.calendar_month),
-            ),
-          ],
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                _buildDateCard(),
-                const SizedBox(height: 12),
-                _buildChapterCountCard(day),
-                const SizedBox(height: 16),
-                if (day != null && day.chapters.isNotEmpty)
-                  ...List.generate(
-                    day.chapters.length,
-                    (index) => _buildChapterCard(
-                      day,
-                      index,
-                    ),
-                  ),
-                if (day == null || day.chapters.isEmpty)
-                  _buildEmptyState(),
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: _addChapter,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Chapter'),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(54),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDateCard() {
-    final formatted =
-        '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primaryContainer,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                Icons.calendar_today,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onPrimaryContainer,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Study Date',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    formatted,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium,
-                  ),
-                ],
-              ),
-            ),
-            OutlinedButton(
-              onPressed: _selectDate,
-              child: const Text('Change'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChapterCountCard(StudyDay? day) {
-    final count = day?.chapters.length ?? 0;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          children: [
-            const Icon(Icons.menu_book),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                count == 0
-                    ? 'No chapters yet'
-                    : '$count ${count == 1 ? 'chapter' : 'chapters'} today',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            if (count > 0)
-              Text(
-                '$count',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall
-                    ?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChapterCard(
-    StudyDay day,
-    int index,
+  factory StudyDay.fromJson(
+    Map<String, dynamic> json,
   ) {
-    final chapter = day.chapters[index];
-
-    final title = chapter.book.trim().isEmpty
-        ? 'Chapter ${index + 1}'
-        : '${chapter.book} ${chapter.chapter}'.trim();
-
-    final preview = chapter.mainIdea.trim().isEmpty
-        ? 'Tap to continue your study'
-        : chapter.mainIdea.trim();
-
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _openChapterEditor(day, index),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                child: Text('${index + 1}'),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      preview,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'delete') {
-                    _deleteChapter(day, index);
-                  }
-                },
-                itemBuilder: (_) => const [
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Text('Remove chapter'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+    return StudyDay(
+      title: json['title'] ?? '',
+      date: json['date'] ?? '',
+      chapters: List<String>.from(
+        json['chapters'] ?? [],
       ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          children: [
-            Icon(
-              Icons.menu_book_outlined,
-              size: 52,
-              color: Theme.of(context)
-                  .colorScheme
-                  .primary,
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Ready for today\'s study?',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Add one chapter or several chapters. '
-              'There is no required number.',
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+      characterStudy:
+          json['characterStudy'] ?? '',
+      chapterStudy:
+          json['chapterStudy'] ?? '',
+      quietTime:
+          json['quietTime'] ?? '',
+      reflection:
+          json['reflection'] ?? '',
     );
   }
 }
 
 // ============================================================
-// CHAPTER STUDY
+// DAILY STUDY PAGE
 // ============================================================
 
-class ChapterStudyScreen extends StatefulWidget {
-  final ChapterStudy chapter;
-  final int chapterNumber;
-  final Future<void> Function() onSave;
+class DailyStudyPage extends StatefulWidget {
+  final StudyDay? study;
 
-  const ChapterStudyScreen({
+  const DailyStudyPage({
     super.key,
-    required this.chapter,
-    required this.chapterNumber,
-    required this.onSave,
+    required this.study,
   });
 
   @override
-  State<ChapterStudyScreen> createState() =>
-      _ChapterStudyScreenState();
+  State<DailyStudyPage> createState() =>
+      _DailyStudyPageState();
 }
 
-class _ChapterStudyScreenState
-    extends State<ChapterStudyScreen> {
-  late final TextEditingController _bookController;
-  late final TextEditingController _chapterController;
-  late final TextEditingController _mainIdeaController;
-  late final TextEditingController _observationsController;
-  late final TextEditingController _keyVersesController;
-  late final TextEditingController _meaningController;
-  late final TextEditingController _applicationController;
-  late final TextEditingController _prayerController;
-  late final TextEditingController _characterController;
-  late final TextEditingController _questionsController;
+class _DailyStudyPageState
+    extends State<DailyStudyPage> {
+  late TextEditingController _titleController;
+  late TextEditingController _chapterController;
+
+  final TextEditingController _characterController =
+      TextEditingController();
+
+  final TextEditingController _chapterStudyController =
+      TextEditingController();
+
+  final TextEditingController _quietController =
+      TextEditingController();
+
+  final TextEditingController _reflectionController =
+      TextEditingController();
+
+  final List<String> _chapters = [];
 
   @override
   void initState() {
     super.initState();
 
-    _bookController =
-        TextEditingController(text: widget.chapter.book);
+    final study = widget.study;
+
+    _titleController = TextEditingController(
+      text: study?.title ?? '',
+    );
 
     _chapterController =
-        TextEditingController(text: widget.chapter.chapter);
+        TextEditingController();
 
-    _mainIdeaController =
-        TextEditingController(text: widget.chapter.mainIdea);
+    if (study != null) {
+      _chapters.addAll(study.chapters);
 
-    _observationsController =
-        TextEditingController(
-          text: widget.chapter.observations,
-        );
+      _characterController.text =
+          study.characterStudy;
 
-    _keyVersesController =
-        TextEditingController(
-          text: widget.chapter.keyVerses,
-        );
+      _chapterStudyController.text =
+          study.chapterStudy;
 
-    _meaningController =
-        TextEditingController(
-          text: widget.chapter.meaning,
-        );
+      _quietController.text =
+          study.quietTime;
 
-    _applicationController =
-        TextEditingController(
-          text: widget.chapter.application,
-        );
-
-    _prayerController =
-        TextEditingController(
-          text: widget.chapter.prayer,
-        );
-
-    _characterController =
-        TextEditingController(
-          text: widget.chapter.characterStudy,
-        );
-
-    _questionsController =
-        TextEditingController(
-          text: widget.chapter.questions,
-        );
+      _reflectionController.text =
+          study.reflection;
+    }
   }
 
   @override
   void dispose() {
-    _bookController.dispose();
+    _titleController.dispose();
     _chapterController.dispose();
-    _mainIdeaController.dispose();
-    _observationsController.dispose();
-    _keyVersesController.dispose();
-    _meaningController.dispose();
-    _applicationController.dispose();
-    _prayerController.dispose();
     _characterController.dispose();
-    _questionsController.dispose();
-
+    _chapterStudyController.dispose();
+    _quietController.dispose();
+    _reflectionController.dispose();
     super.dispose();
   }
 
-  Future<void> _save() async {
-    widget.chapter.book = _bookController.text;
-    widget.chapter.chapter = _chapterController.text;
-    widget.chapter.mainIdea = _mainIdeaController.text;
-    widget.chapter.observations =
-        _observationsController.text;
-    widget.chapter.keyVerses =
-        _keyVersesController.text;
-    widget.chapter.meaning =
-        _meaningController.text;
-    widget.chapter.application =
-        _applicationController.text;
-    widget.chapter.prayer =
-        _prayerController.text;
-    widget.chapter.characterStudy =
-        _characterController.text;
-    widget.chapter.questions =
-        _questionsController.text;
+  String get _date {
+    if (widget.study?.date.isNotEmpty == true) {
+      return widget.study!.date;
+    }
 
-    await widget.onSave();
+    final now = DateTime.now();
 
-    if (!mounted) return;
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Study saved'),
-      ),
+  void _addChapter() {
+    final value =
+        _chapterController.text.trim();
+
+    if (value.isEmpty) return;
+
+    setState(() {
+      _chapters.add(value);
+      _chapterController.clear();
+    });
+  }
+
+  void _removeChapter(int index) {
+    setState(() {
+      _chapters.removeAt(index);
+    });
+  }
+
+  void _save() {
+    if (_chapters.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please add at least one chapter.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final study = StudyDay(
+      title: _titleController.text.trim(),
+      date: _date,
+      chapters: List.from(_chapters),
+      characterStudy:
+          _characterController.text,
+      chapterStudy:
+          _chapterStudyController.text,
+      quietTime:
+          _quietController.text,
+      reflection:
+          _reflectionController.text,
     );
+
+    Navigator.pop(context, study);
   }
 
   @override
@@ -910,372 +741,281 @@ class _ChapterStudyScreenState
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Chapter ${widget.chapterNumber} Study',
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Save',
-            onPressed: _save,
-            icon: const Icon(Icons.save),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
-        children: [
-          _sectionTitle(
-            'Chapter',
-            Icons.menu_book,
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: _field(
-                  _bookController,
-                  'Book',
-                  'e.g. Matthew',
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _field(
-                  _chapterController,
-                  'Chapter',
-                  'e.g. 5',
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 22),
-
-          _sectionTitle(
-            'Understand the Chapter',
-            Icons.search,
-          ),
-
-          _field(
-            _mainIdeaController,
-            'Main Idea',
-            'What is the main message of this chapter?',
-            minLines: 3,
-          ),
-
-          _field(
-            _observationsController,
-            'What Do You Notice?',
-            'Important people, events, commands, promises, repeated words, contrasts, etc.',
-            minLines: 4,
-          ),
-
-          _field(
-            _keyVersesController,
-            'Key Verses',
-            'Which verses stand out and why?',
-            minLines: 3,
-          ),
-
-          _field(
-            _meaningController,
-            'What Does It Mean?',
-            'What does this chapter teach about God, people, sin, faith, salvation, or Christian living?',
-            minLines: 4,
-          ),
-
-          const SizedBox(height: 12),
-
-          _sectionTitle(
-            'Character Study',
-            Icons.person_outline,
-          ),
-
-          _field(
-            _characterController,
-            'Character Study',
-            'Who is mentioned? What do they do, say, believe, or learn? What can you learn from or about them?',
-            minLines: 5,
-          ),
-
-          const SizedBox(height: 12),
-
-          _sectionTitle(
-            'Questions',
-            Icons.help_outline,
-          ),
-
-          _field(
-            _questionsController,
-            'Study Questions',
-            'What surprised me? What is difficult to understand? What does this reveal about God? What should I believe or change?',
-            minLines: 5,
-          ),
-
-          const SizedBox(height: 12),
-
-          _sectionTitle(
-            'Application',
-            Icons.directions_walk,
-          ),
-
-          _field(
-            _applicationController,
-            'How Will I Apply This?',
-            'What should I do, change, remember, practice, avoid, or trust because of this chapter?',
-            minLines: 5,
-          ),
-
-          const SizedBox(height: 12),
-
-          _sectionTitle(
-            'Prayer',
-            Icons.favorite_outline,
-          ),
-
-          _field(
-            _prayerController,
-            'Prayer',
-            'Respond to what you learned from the chapter.',
-            minLines: 4,
-          ),
-
-          const SizedBox(height: 20),
-
-          FilledButton.icon(
-            onPressed: _save,
-            icon: const Icon(Icons.save),
-            label: const Text('Save Chapter Study'),
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(54),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _sectionTitle(
-    String title,
-    IconData icon,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 22,
-            color: Theme.of(context)
-                .colorScheme
-                .primary,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _field(
-    TextEditingController controller,
-    String label,
-    String hint, {
-    int minLines = 2,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 10),
-      child: TextField(
-        controller: controller,
-        minLines: minLines,
-        maxLines: null,
-        textCapitalization: TextCapitalization.sentences,
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          alignLabelWithHint: true,
+          widget.study == null
+              ? 'New Daily Study'
+              : 'Edit Daily Study',
         ),
       ),
-    );
-  }
-}
-
-// ============================================================
-// TRACKER
-// ============================================================
-
-class TrackerScreen extends StatefulWidget {
-  final StudyStorage storage;
-
-  const TrackerScreen({
-    super.key,
-    required this.storage,
-  });
-
-  @override
-  State<TrackerScreen> createState() =>
-      _TrackerScreenState();
-}
-
-class _TrackerScreenState extends State<TrackerScreen> {
-  List<StudyDay> _studies = [];
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    final studies = await widget.storage.loadStudies();
-
-    if (!mounted) return;
-
-    setState(() {
-      _studies = studies;
-      _loading = false;
-    });
-  }
-
-  int get _totalChapters {
-    return _studies.fold(
-      0,
-      (sum, day) => sum + day.chapters.length,
-    );
-  }
-
-  int get _daysStudied {
-    return _studies
-        .where((day) => day.chapters.isNotEmpty)
-        .length;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    }
-
-    final sorted = [..._studies]
-      ..sort(
-        (a, b) => b.date.compareTo(a.date),
-      );
-
-    return CustomScrollView(
-      slivers: [
-        const SliverAppBar(
-          pinned: true,
-          title: Text(
-            'Study Tracker',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        SliverPadding(
+      body: SafeArea(
+        child: ListView(
           padding: const EdgeInsets.all(16),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                Row(
+          children: [
+            // DATE + CHAPTERS TOGETHER
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: _statCard(
-                        'Days',
-                        '$_daysStudied',
-                        Icons.calendar_month,
+                    Text(
+                      'Study Details',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    Text(
+                      'Date: $_date',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _statCard(
-                        'Chapters',
-                        '$_totalChapters',
-                        Icons.menu_book,
+
+                    const SizedBox(height: 16),
+
+                    TextField(
+                      controller: _titleController,
+                      decoration:
+                          const InputDecoration(
+                        labelText: 'Study title (optional)',
+                        hintText:
+                            'Example: Romans 1–3',
                       ),
                     ),
+
+                    const SizedBox(height: 16),
+
+                    TextField(
+                      controller: _chapterController,
+                      decoration:
+                          InputDecoration(
+                        labelText: 'Add a chapter',
+                        hintText:
+                            'Example: Romans 1',
+                        suffixIcon: IconButton(
+                          onPressed: _addChapter,
+                          icon: const Icon(
+                            Icons.add_circle,
+                          ),
+                        ),
+                      ),
+                      onSubmitted: (_) =>
+                          _addChapter(),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    if (_chapters.isEmpty)
+                      const Text(
+                        'No chapters added yet. You can study one chapter or several chapters in the same day.',
+                      )
+                    else
+                      ...List.generate(
+                        _chapters.length,
+                        (index) => Card(
+                          margin:
+                              const EdgeInsets.only(
+                            bottom: 6,
+                          ),
+                          child: ListTile(
+                            dense: true,
+                            leading: CircleAvatar(
+                              radius: 16,
+                              child: Text(
+                                '${index + 1}',
+                              ),
+                            ),
+                            title: Text(
+                              _chapters[index],
+                            ),
+                            trailing:
+                                IconButton(
+                              onPressed: () =>
+                                  _removeChapter(
+                                      index),
+                              icon: const Icon(
+                                Icons.close,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
-                const SizedBox(height: 18),
-                const Text(
-                  'Study History',
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // CHAPTER STUDY
+            _studySection(
+              title: 'CHAPTER STUDY',
+              icon: Icons.menu_book,
+              controller:
+                  _chapterStudyController,
+              questions: const [
+                'What is happening in this chapter?',
+                'What stands out to me?',
+                'What does this chapter teach me about God?',
+                'What does it teach me about people?',
+                'What commands, promises, warnings, or examples do I see?',
+                'Is there a repeated word, idea, or theme?',
+                'What does this chapter mean in its context?',
+                'How should this change the way I think or live?',
+                'What is one thing I want to remember from this chapter?',
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // CHARACTER STUDY UNDER CHAPTER STUDY
+            _studySection(
+              title: 'BIBLE CHARACTER STUDY',
+              icon: Icons.person,
+              controller:
+                  _characterController,
+              questions: const [
+                'Who is the main person or people in this chapter?',
+                'What do I learn about their character?',
+                'What did they do well?',
+                'What did they do poorly?',
+                'What motivated their actions?',
+                'How did they respond to God?',
+                'What can I learn from their example?',
+                'Is there a warning I should learn from?',
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // QUIET TIME
+            _studySection(
+              title: 'QUIET TIME NOTES',
+              icon: Icons.spa,
+              controller: _quietController,
+              questions: const [
+                'What is God putting on my heart?',
+                'What do I need to pray about?',
+                'Is there a truth I need to remember today?',
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // REFLECTION
+            _studySection(
+              title: 'REFLECTION JOURNAL',
+              icon: Icons.edit_note,
+              controller:
+                  _reflectionController,
+              questions: const [
+                'What did I learn today?',
+                'How can I apply it?',
+                'What is one practical step I can take?',
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            FilledButton.icon(
+              onPressed: _save,
+              icon: const Icon(Icons.save),
+              label: const Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: 14,
+                ),
+                child: Text(
+                  'SAVE STUDY',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
-                if (sorted.isEmpty)
-                  const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Text(
-                        'Your completed study days will appear here.',
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ...sorted.map(
-                  (day) => Card(
-                    child: ListTile(
-                      leading: const CircleAvatar(
-                        child: Icon(Icons.menu_book),
-                      ),
-                      title: Text(day.date),
-                      subtitle: Text(
-                        '${day.chapters.length} '
-                        '${day.chapters.length == 1 ? 'chapter' : 'chapters'}',
-                      ),
-                    ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _studySection({
+    required String title,
+    required IconData icon,
+    required TextEditingController controller,
+    required List<String> questions,
+  }) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                 ),
               ],
             ),
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _statCard(
-    String title,
-    String value,
-    IconData icon,
-  ) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 28,
-              color: Theme.of(context)
-                  .colorScheme
-                  .primary,
+            const SizedBox(height: 14),
+
+            ...questions.map(
+              (question) => Padding(
+                padding:
+                    const EdgeInsets.only(
+                  bottom: 8,
+                ),
+                child: Row(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '• ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(question),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineMedium
-                  ?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+
+            const SizedBox(height: 10),
+
+            TextField(
+              controller: controller,
+              maxLines: 8,
+              decoration:
+                  const InputDecoration(
+                hintText:
+                    'Write your notes here...',
+                alignLabelWithHint: true,
+              ),
             ),
-            Text(title),
           ],
         ),
       ),
@@ -1284,491 +1024,516 @@ class _TrackerScreenState extends State<TrackerScreen> {
 }
 
 // ============================================================
-// BACKUP / RESTORE
+// NEW TESTAMENT TRACKER
 // ============================================================
 
-class BackupScreen extends StatefulWidget {
-  final StudyStorage storage;
-
-  const BackupScreen({
+class NewTestamentTrackerPage
+    extends StatefulWidget {
+  const NewTestamentTrackerPage({
     super.key,
-    required this.storage,
   });
 
   @override
-  State<BackupScreen> createState() =>
-      _BackupScreenState();
+  State<NewTestamentTrackerPage> createState() =>
+      _NewTestamentTrackerPageState();
 }
 
-class _BackupScreenState extends State<BackupScreen> {
-  final TextEditingController _restoreController =
-      TextEditingController();
+class _NewTestamentTrackerPageState
+    extends State<NewTestamentTrackerPage> {
+  static const String _storageKey =
+      'bitaniya_nt_tracker_v2';
 
-  bool _working = false;
+  final Map<String, int> _bookChapters = {
+    'Matthew': 28,
+    'Mark': 16,
+    'Luke': 24,
+    'John': 21,
+    'Acts': 28,
+    'Romans': 16,
+    '1 Corinthians': 16,
+    '2 Corinthians': 13,
+    'Galatians': 6,
+    'Ephesians': 6,
+    'Philippians': 4,
+    'Colossians': 4,
+    '1 Thessalonians': 5,
+    '2 Thessalonians': 3,
+    '1 Timothy': 6,
+    '2 Timothy': 4,
+    'Titus': 3,
+    'Philemon': 1,
+    'Hebrews': 13,
+    'James': 5,
+    '1 Peter': 5,
+    '2 Peter': 3,
+    '1 John': 5,
+    '2 John': 1,
+    '3 John': 1,
+    'Jude': 1,
+    'Revelation': 22,
+  };
+
+  final Set<String> _completed = {};
 
   @override
-  void dispose() {
-    _restoreController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _loadProgress();
   }
 
-  Future<void> _backup() async {
-    setState(() {
-      _working = true;
-    });
+  Future<void> _loadProgress() async {
+    final prefs =
+        await SharedPreferences.getInstance();
 
-    final backup =
-        await widget.storage.createBackup();
-
-    if (!mounted) return;
+    final list =
+        prefs.getStringList(_storageKey) ?? [];
 
     setState(() {
-      _working = false;
+      _completed.addAll(list);
     });
+  }
 
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Backup'),
-        content: SizedBox(
-          width: 600,
-          child: SingleChildScrollView(
-            child: SelectableText(backup),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await Clipboard.setData(
-                ClipboardData(text: backup),
-              );
+  Future<void> _saveProgress() async {
+    final prefs =
+        await SharedPreferences.getInstance();
 
-              if (context.mounted) {
-                Navigator.pop(context);
-
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Backup copied to clipboard',
-                    ),
-                  ),
-                );
-              }
-            },
-            child: const Text('Copy Backup'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: const Text('Close'),
-          ),
-        ],
-      ),
+    await prefs.setStringList(
+      _storageKey,
+      _completed.toList(),
     );
   }
 
-  Future<void> _restore() async {
-    final text = _restoreController.text.trim();
+  String _chapterKey(
+    String book,
+    int chapter,
+  ) {
+    return '$book:$chapter';
+  }
 
-    if (text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Paste your backup first.',
+  bool _isComplete(
+    String book,
+    int chapter,
+  ) {
+    return _completed.contains(
+      _chapterKey(book, chapter),
+    );
+  }
+
+  void _toggleChapter(
+    String book,
+    int chapter,
+  ) async {
+    final key = _chapterKey(book, chapter);
+
+    setState(() {
+      if (_completed.contains(key)) {
+        _completed.remove(key);
+      } else {
+        _completed.add(key);
+      }
+    });
+
+    await _saveProgress();
+  }
+
+  int get _totalChapters {
+    return _bookChapters.values.fold(
+      0,
+      (sum, value) => sum + value,
+    );
+  }
+
+  double get _progress {
+    if (_totalChapters == 0) {
+      return 0;
+    }
+
+    return _completed.length /
+        _totalChapters;
+  }
+
+  void _clearProgress() async {
+    final confirmed =
+        await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'Reset tracker?',
           ),
-        ),
-      );
+          content: const Text(
+            'This will remove all completed chapter marks.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () =>
+                  Navigator.pop(
+                context,
+                false,
+              ),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.pop(
+                context,
+                true,
+              ),
+              child: const Text('Reset'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) {
       return;
     }
 
     setState(() {
-      _working = true;
+      _completed.clear();
     });
 
-    final success =
-        await widget.storage.restoreBackup(text);
-
-    if (!mounted) return;
-
-    setState(() {
-      _working = false;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success
-              ? 'Backup restored successfully.'
-              : 'This backup could not be restored.',
-        ),
-      ),
-    );
-
-    if (success) {
-      _restoreController.clear();
-    }
-  }
-
-  Future<void> _clearAll() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Delete all studies?'),
-        content: const Text(
-          'This will permanently remove all saved '
-          'study data from this device/browser.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.pop(context, true),
-            child: const Text('Delete All'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    await widget.storage.clearAll();
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('All study data deleted.'),
-      ),
-    );
+    await _saveProgress();
   }
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        const SliverAppBar(
-          pinned: true,
-          title: Text(
-            'Backup & Restore',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'New Testament Reading Tracker',
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Reset tracker',
+            onPressed: _clearProgress,
+            icon: const Icon(
+              Icons.restart_alt,
             ),
           ),
-        ),
-        SliverPadding(
+        ],
+      ),
+      body: SafeArea(
+        child: ListView(
           padding: const EdgeInsets.all(16),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.backup,
-                          size: 40,
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Backup your studies',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Create a backup containing your '
-                          'dates, chapters and study notes.',
-                        ),
-                        const SizedBox(height: 16),
-                        FilledButton.icon(
-                          onPressed:
-                              _working ? null : _backup,
-                          icon: const Icon(Icons.copy),
-                          label: const Text(
-                            'Create Backup',
-                          ),
-                          style: FilledButton.styleFrom(
-                            minimumSize:
-                                const Size.fromHeight(52),
-                          ),
-                        ),
-                      ],
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${_completed.length} / $_totalChapters chapters completed',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.restore,
-                          size: 40,
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Restore your studies',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Paste a previously created backup below.',
-                        ),
-                        const SizedBox(height: 14),
-                        TextField(
-                          controller:
-                              _restoreController,
-                          minLines: 8,
-                          maxLines: 14,
-                          decoration:
-                              const InputDecoration(
-                            hintText:
-                                'Paste backup here...',
-                            alignLabelWithHint: true,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        FilledButton.icon(
-                          onPressed:
-                              _working ? null : _restore,
-                          icon: const Icon(
-                            Icons.restore,
-                          ),
-                          label: const Text(
-                            'Restore Backup',
-                          ),
-                          style: FilledButton.styleFrom(
-                            minimumSize:
-                                const Size.fromHeight(52),
-                          ),
-                        ),
-                      ],
+
+                    const SizedBox(height: 12),
+
+                    LinearProgressIndicator(
+                      value: _progress,
+                      minHeight: 10,
                     ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.delete_outline,
-                          size: 36,
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Delete all local study data',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextButton(
-                          onPressed: _clearAll,
-                          child: const Text(
-                            'Delete Everything',
-                          ),
-                        ),
-                      ],
+
+                    const SizedBox(height: 8),
+
+                    Text(
+                      '${(_progress * 100).toStringAsFixed(1)}% complete',
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
+
+            const SizedBox(height: 16),
+
+            ..._bookChapters.entries.map(
+              (entry) {
+                final book = entry.key;
+                final chapters = entry.value;
+
+                final completedForBook =
+                    List.generate(
+                  chapters,
+                  (index) => index + 1,
+                ).where(
+                  (chapter) =>
+                      _isComplete(
+                    book,
+                    chapter,
+                  ),
+                ).length;
+
+                return Card(
+                  margin:
+                      const EdgeInsets.only(
+                    bottom: 12,
+                  ),
+                  child: ExpansionTile(
+                    title: Text(
+                      book,
+                      style: const TextStyle(
+                        fontWeight:
+                            FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '$completedForBook / $chapters chapters',
+                    ),
+                    children: [
+                      Padding(
+                        padding:
+                            const EdgeInsets.fromLTRB(
+                          16,
+                          0,
+                          16,
+                          16,
+                        ),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: List.generate(
+                            chapters,
+                            (index) {
+                              final chapter =
+                                  index + 1;
+                              final complete =
+                                  _isComplete(
+                                book,
+                                chapter,
+                              );
+
+                              return FilterChip(
+                                selected:
+                                    complete,
+                                label: Text(
+                                  '$chapter',
+                                ),
+                                onSelected: (_) =>
+                                    _toggleChapter(
+                                  book,
+                                  chapter,
+                                ),
+                                avatar: complete
+                                    ? const Icon(
+                                        Icons.check,
+                                        size: 18,
+                                      )
+                                    : null,
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 30),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
 
 // ============================================================
-// SETTINGS
+// BACKUP PAGE
 // ============================================================
 
-class SettingsScreen extends StatelessWidget {
-  final ThemeMode themeMode;
-  final Future<void> Function(ThemeMode) onThemeChanged;
+class BackupPage extends StatefulWidget {
+  const BackupPage({super.key});
 
-  const SettingsScreen({
-    super.key,
-    required this.themeMode,
-    required this.onThemeChanged,
-  });
+  @override
+  State<BackupPage> createState() =>
+      _BackupPageState();
+}
 
-  String _themeName() {
-    if (themeMode == ThemeMode.light) {
-      return 'Light';
+class _BackupPageState
+    extends State<BackupPage> {
+  String _message = '';
+
+  Future<void> _backup() async {
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    final studies =
+        prefs.getString('bitaniya_studies') ?? '[]';
+
+    final tracker =
+        prefs.getStringList(
+          'bitaniya_nt_tracker_v2',
+        ) ??
+        [];
+
+    final backup = jsonEncode({
+      'app': 'Bitaniya Bible Study',
+      'version': 1,
+      'studies': jsonDecode(studies),
+      'newTestamentTracker': tracker,
+    });
+
+    await Clipboard.setData(
+      ClipboardData(text: backup),
+    );
+
+    setState(() {
+      _message =
+          'Backup copied to your clipboard.';
+    });
+  }
+
+  Future<void> _restore() async {
+    final data =
+        await Clipboard.getData(
+      Clipboard.kTextPlain,
+    );
+
+    if (data == null ||
+        data.text == null ||
+        data.text!.trim().isEmpty) {
+      setState(() {
+        _message =
+            'No backup data was found in the clipboard.';
+      });
+      return;
     }
 
-    if (themeMode == ThemeMode.dark) {
-      return 'Dark';
-    }
+    try {
+      final decoded =
+          jsonDecode(data.text!);
 
-    return 'System default';
+      if (decoded is! Map) {
+        throw Exception();
+      }
+
+      final prefs =
+          await SharedPreferences.getInstance();
+
+      final studies =
+          decoded['studies'];
+
+      if (studies is List) {
+        await prefs.setString(
+          'bitaniya_studies',
+          jsonEncode(studies),
+        );
+      }
+
+      final tracker =
+          decoded['newTestamentTracker'];
+
+      if (tracker is List) {
+        await prefs.setStringList(
+          'bitaniya_nt_tracker_v2',
+          List<String>.from(tracker),
+        );
+      }
+
+      setState(() {
+        _message =
+            'Backup restored successfully. Restart or revisit the pages to see the restored data.';
+      });
+    } catch (_) {
+      setState(() {
+        _message =
+            'That clipboard content is not a valid Bitaniya Bible Study backup.';
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
-
-    return CustomScrollView(
-      slivers: [
-        const SliverAppBar(
-          pinned: true,
-          title: Text(
-            'Settings',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.all(16),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                Card(
-                  child: ListTile(
-                    leading: Icon(
-                      isDark
-                          ? Icons.dark_mode
-                          : Icons.light_mode,
-                    ),
-                    title: const Text(
-                      'Appearance',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: Text(
-                      _themeName(),
-                    ),
-                    trailing: const Icon(
-                      Icons.chevron_right,
-                    ),
-                    onTap: () {
-                      _showThemePicker(context);
-                    },
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Backup & Restore'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  const Icon(
+                    Icons.cloud_upload,
+                    size: 60,
                   ),
-                ),
-                const SizedBox(height: 10),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Bitaniya Bible Study',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'A simple place to study the Bible '
-                          'chapter by chapter, every day.',
-                        ),
-                      ],
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Backup all your study data',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Your daily studies and New Testament reading tracker can be backed up together.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    onPressed: _backup,
+                    icon: const Icon(
+                      Icons.copy,
+                    ),
+                    label: const Text(
+                      'Copy Backup',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _restore,
+                    icon: const Icon(
+                      Icons.restore,
+                    ),
+                    label: const Text(
+                      'Restore Backup',
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
-    );
-  }
 
-  void _showThemePicker(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (_) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(18),
+          if (_message.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding:
+                    const EdgeInsets.all(16),
                 child: Text(
-                  'Choose appearance',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  _message,
+                  textAlign:
+                      TextAlign.center,
                 ),
               ),
-              RadioListTile<ThemeMode>(
-                value: ThemeMode.light,
-                groupValue: themeMode,
-                title: const Text('Light'),
-                secondary: const Icon(
-                  Icons.light_mode,
-                ),
-                onChanged: (value) {
-                  if (value != null) {
-                    onThemeChanged(value);
-                    Navigator.pop(context);
-                  }
-                },
+            ),
+          ],
+
+          const SizedBox(height: 20),
+
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Tip: Keep your backup text somewhere safe. You can use it to restore your study data later.',
+                textAlign: TextAlign.center,
               ),
-              RadioListTile<ThemeMode>(
-                value: ThemeMode.dark,
-                groupValue: themeMode,
-                title: const Text('Dark'),
-                secondary: const Icon(
-                  Icons.dark_mode,
-                ),
-                onChanged: (value) {
-                  if (value != null) {
-                    onThemeChanged(value);
-                    Navigator.pop(context);
-                  }
-                },
-              ),
-              RadioListTile<ThemeMode>(
-                value: ThemeMode.system,
-                groupValue: themeMode,
-                title: const Text('System default'),
-                secondary: const Icon(
-                  Icons.brightness_auto,
-                ),
-                onChanged: (value) {
-                  if (value != null) {
-                    onThemeChanged(value);
-                    Navigator.pop(context);
-                  }
-                },
-              ),
-              const SizedBox(height: 12),
-            ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }
