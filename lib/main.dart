@@ -932,7 +932,7 @@ class _EmptyCard extends StatelessWidget {
 }
 
 // ============================================================
-// SETTINGS - NEW DARK/LIGHT MODE
+// SETTINGS - DARK/LIGHT MODE
 // ============================================================
 
 class SettingsScreen extends StatelessWidget {
@@ -1830,7 +1830,12 @@ class _ReadingTrackerScreenState
         .length;
   }
 
-  int totalReadToday {
+  // ==========================================================
+  // FIXED ERROR:
+  // Added "get" so this is a getter instead of a method.
+  // ==========================================================
+
+  int get totalReadToday {
     return todayRead.length;
   }
 
@@ -1877,7 +1882,7 @@ class _ReadingTrackerScreenState
 
   double get todayPercentage {
     if (totalNewTestamentChapters == 0) {
-      return 0;
+      return 0.0;
     }
 
     return totalReadToday /
@@ -2041,6 +2046,7 @@ class _ReadingTrackerScreenState
 
   Widget _buildBookCard(BibleBook book) {
     final read = bookReadCount(book);
+
     final percentage = book.chapters == 0
         ? 0.0
         : read / book.chapters;
@@ -2092,8 +2098,10 @@ class _ReadingTrackerScreenState
             itemCount: book.chapters,
             itemBuilder: (context, index) {
               final chapter = index + 1;
+
               final id =
                   '${book.name}|$chapter';
+
               final isRead =
                   todayRead.contains(id);
 
