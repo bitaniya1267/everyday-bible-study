@@ -1,11 +1,15 @@
 import 'dart:convert';
+import 'dart:html' as html;
+
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
   runApp(const BitaniyaBibleStudyApp());
 }
+
+// ============================================================
+// APP
+// ============================================================
 
 class BitaniyaBibleStudyApp extends StatelessWidget {
   const BitaniyaBibleStudyApp({super.key});
@@ -13,16 +17,31 @@ class BitaniyaBibleStudyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       title: 'Bitaniya Bible Study',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF9A5C78),
+        ),
         scaffoldBackgroundColor: const Color(0xFFFCF9F6),
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink),
-        inputDecorationTheme: const InputDecorationTheme(
-          border: OutlineInputBorder(),
+        inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(
+              color: Color(0xFF9A5C78),
+              width: 2,
+            ),
+          ),
         ),
       ),
       home: const HomePage(),
@@ -31,279 +50,90 @@ class BitaniyaBibleStudyApp extends StatelessWidget {
 }
 
 // ============================================================
-// DATA MODELS
-// ============================================================
-
-class ChapterStudy {
-  String id;
-  String book;
-  String chapter;
-  String passage;
-  bool completed;
-
-  // Character Study
-  String character;
-  String knownFor;
-  String charBooks;
-  String charChapters;
-  String charStory;
-  String traits;
-  String charVerses;
-  String charLearn;
-  String charApply;
-  String charChallenges;
-  String charGodUsed;
-  String charTakeaway;
-  String charPrayer;
-
-  // Chapter Study
-  String summary;
-  String chapterCharacters;
-  String concepts;
-  String chapterChallenge;
-  String chapterVerse;
-
-  // Quiet Time
-  String noticed;
-  String remember;
-  String aboutGod;
-  String aboutChrist;
-  String aboutHumans;
-  String response;
-
-  // Reflection
-  String questions;
-  String lifeApplication;
-  String studyFurther;
-  String teaching;
-  String memoryVerse;
-  String reflectionPrayer;
-
-  ChapterStudy({
-    required this.id,
-    this.book = '',
-    this.chapter = '',
-    this.passage = '',
-    this.completed = false,
-    this.character = '',
-    this.knownFor = '',
-    this.charBooks = '',
-    this.charChapters = '',
-    this.charStory = '',
-    this.traits = '',
-    this.charVerses = '',
-    this.charLearn = '',
-    this.charApply = '',
-    this.charChallenges = '',
-    this.charGodUsed = '',
-    this.charTakeaway = '',
-    this.charPrayer = '',
-    this.summary = '',
-    this.chapterCharacters = '',
-    this.concepts = '',
-    this.chapterChallenge = '',
-    this.chapterVerse = '',
-    this.noticed = '',
-    this.remember = '',
-    this.aboutGod = '',
-    this.aboutChrist = '',
-    this.aboutHumans = '',
-    this.response = '',
-    this.questions = '',
-    this.lifeApplication = '',
-    this.studyFurther = '',
-    this.teaching = '',
-    this.memoryVerse = '',
-    this.reflectionPrayer = '',
-  });
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'book': book,
-        'chapter': chapter,
-        'passage': passage,
-        'completed': completed,
-        'character': character,
-        'knownFor': knownFor,
-        'charBooks': charBooks,
-        'charChapters': charChapters,
-        'charStory': charStory,
-        'traits': traits,
-        'charVerses': charVerses,
-        'charLearn': charLearn,
-        'charApply': charApply,
-        'charChallenges': charChallenges,
-        'charGodUsed': charGodUsed,
-        'charTakeaway': charTakeaway,
-        'charPrayer': charPrayer,
-        'summary': summary,
-        'chapterCharacters': chapterCharacters,
-        'concepts': concepts,
-        'chapterChallenge': chapterChallenge,
-        'chapterVerse': chapterVerse,
-        'noticed': noticed,
-        'remember': remember,
-        'aboutGod': aboutGod,
-        'aboutChrist': aboutChrist,
-        'aboutHumans': aboutHumans,
-        'response': response,
-        'questions': questions,
-        'lifeApplication': lifeApplication,
-        'studyFurther': studyFurther,
-        'teaching': teaching,
-        'memoryVerse': memoryVerse,
-        'reflectionPrayer': reflectionPrayer,
-      };
-
-  factory ChapterStudy.fromJson(Map<String, dynamic> j) {
-    String s(String key) => j[key]?.toString() ?? '';
-
-    return ChapterStudy(
-      id: s('id'),
-      book: s('book'),
-      chapter: s('chapter'),
-      passage: s('passage'),
-      completed: j['completed'] == true,
-      character: s('character'),
-      knownFor: s('knownFor'),
-      charBooks: s('charBooks'),
-      charChapters: s('charChapters'),
-      charStory: s('charStory'),
-      traits: s('traits'),
-      charVerses: s('charVerses'),
-      charLearn: s('charLearn'),
-      charApply: s('charApply'),
-      charChallenges: s('charChallenges'),
-      charGodUsed: s('charGodUsed'),
-      charTakeaway: s('charTakeaway'),
-      charPrayer: s('charPrayer'),
-      summary: s('summary'),
-      chapterCharacters: s('chapterCharacters'),
-      concepts: s('concepts'),
-      chapterChallenge: s('chapterChallenge'),
-      chapterVerse: s('chapterVerse'),
-      noticed: s('noticed'),
-      remember: s('remember'),
-      aboutGod: s('aboutGod'),
-      aboutChrist: s('aboutChrist'),
-      aboutHumans: s('aboutHumans'),
-      response: s('response'),
-      questions: s('questions'),
-      lifeApplication: s('lifeApplication'),
-      studyFurther: s('studyFurther'),
-      teaching: s('teaching'),
-      memoryVerse: s('memoryVerse'),
-      reflectionPrayer: s('reflectionPrayer'),
-    );
-  }
-}
-
-class DailyStudy {
-  String id;
-  String date;
-  int goal;
-  List<ChapterStudy> chapters;
-
-  DailyStudy({
-    required this.id,
-    required this.date,
-    this.goal = 3,
-    List<ChapterStudy>? chapters,
-  }) : chapters = chapters ?? [];
-
-  int get completedCount =>
-      chapters.where((chapter) => chapter.completed).length;
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'date': date,
-        'goal': goal,
-        'chapters': chapters.map((e) => e.toJson()).toList(),
-      };
-
-  factory DailyStudy.fromJson(Map<String, dynamic> j) {
-    final raw = j['chapters'];
-
-    return DailyStudy(
-      id: j['id']?.toString() ?? '',
-      date: j['date']?.toString() ?? '',
-      goal: int.tryParse(j['goal']?.toString() ?? '') ?? 3,
-      chapters: raw is List
-          ? raw
-              .map((e) =>
-                  ChapterStudy.fromJson(Map<String, dynamic>.from(e)))
-              .toList()
-          : [],
-    );
-  }
-}
-
-// ============================================================
 // STORAGE
 // ============================================================
 
-class Store {
-  static const String newKey = 'bitaniya_daily_studies_v3';
-  static const String oldKey = 'bitaniya_bible_studies_v2';
+class AppStorage {
+  static const studiesKey = 'bitaniya_daily_studies';
+  static const trackerKey = 'bitaniya_nt_tracker';
 
-  static Future<List<DailyStudy>> load() async {
-    final prefs = await SharedPreferences.getInstance();
+  static List<Map<String, dynamic>> studies() {
+    final raw = html.window.localStorage[studiesKey];
 
-    final raw = prefs.getString(newKey);
+    if (raw == null || raw.isEmpty) return [];
 
-    if (raw != null) {
-      try {
-        final decoded = jsonDecode(raw) as List;
+    try {
+      final decoded = jsonDecode(raw);
 
+      if (decoded is List) {
         return decoded
-            .map((e) => DailyStudy.fromJson(Map<String, dynamic>.from(e)))
+            .map((e) => Map<String, dynamic>.from(e))
             .toList();
-      } catch (_) {}
-    }
-
-    // Migrate the previous version automatically.
-    final oldRaw = prefs.getString(oldKey);
-
-    if (oldRaw != null) {
-      try {
-        final oldList = jsonDecode(oldRaw) as List;
-
-        final converted = <DailyStudy>[];
-
-        for (final item in oldList) {
-          final j = Map<String, dynamic>.from(item);
-
-          final chapter = ChapterStudy.fromJson({
-            ...j,
-            'id': '${j['id']}_chapter',
-          });
-
-          converted.add(
-            DailyStudy(
-              id: j['id']?.toString() ??
-                  DateTime.now().microsecondsSinceEpoch.toString(),
-              date: j['date']?.toString() ?? fmt(DateTime.now()),
-              goal: 3,
-              chapters: [chapter],
-            ),
-          );
-        }
-
-        await save(converted);
-        return converted;
-      } catch (_) {}
-    }
+      }
+    } catch (_) {}
 
     return [];
   }
 
-  static Future<void> save(List<DailyStudy> studies) async {
-    final prefs = await SharedPreferences.getInstance();
+  static void saveStudies(List<Map<String, dynamic>> data) {
+    html.window.localStorage[studiesKey] = jsonEncode(data);
+  }
 
-    await prefs.setString(
-      newKey,
-      jsonEncode(studies.map((e) => e.toJson()).toList()),
-    );
+  static Set<String> tracker() {
+    final raw = html.window.localStorage[trackerKey];
+
+    if (raw == null || raw.isEmpty) return {};
+
+    try {
+      final decoded = jsonDecode(raw);
+
+      if (decoded is List) {
+        return decoded.map((e) => e.toString()).toSet();
+      }
+    } catch (_) {}
+
+    return {};
+  }
+
+  static void saveTracker(Set<String> data) {
+    html.window.localStorage[trackerKey] =
+        jsonEncode(data.toList());
+  }
+
+  static Map<String, dynamic> backup() {
+    return {
+      'app': 'Bitaniya Bible Study',
+      'version': 3,
+      'created': DateTime.now().toIso8601String(),
+      'studies': studies(),
+      'tracker': tracker().toList(),
+    };
+  }
+
+  static bool restore(Map<String, dynamic> data) {
+    try {
+      final savedStudies = data['studies'];
+
+      if (savedStudies is List) {
+        saveStudies(
+          savedStudies
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList(),
+        );
+      }
+
+      final savedTracker = data['tracker'];
+
+      if (savedTracker is List) {
+        saveTracker(
+          savedTracker.map((e) => e.toString()).toSet(),
+        );
+      }
+
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }
 
@@ -319,713 +149,813 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<DailyStudy> studies = [];
-  bool loading = true;
+  void refresh() => setState(() {});
 
   @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  Widget build(BuildContext context) {
+    final studies = AppStorage.studies();
 
-  Future<void> _load() async {
-    final result = await Store.load();
-
-    result.sort((a, b) => b.date.compareTo(a.date));
-
-    if (!mounted) return;
-
-    setState(() {
-      studies = result;
-      loading = false;
-    });
-  }
-
-  Future<void> _createDailyStudy() async {
-    final daily = DailyStudy(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
-      date: fmt(DateTime.now()),
-      goal: 3,
-    );
-
-    final result = await Navigator.push<DailyStudy>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => DailyStudyPage(daily: daily),
-      ),
-    );
-
-    if (result == null) return;
-
-    setState(() {
-      studies.add(result);
-      studies.sort((a, b) => b.date.compareTo(a.date));
-    });
-
-    await Store.save(studies);
-  }
-
-  Future<void> _open(DailyStudy daily) async {
-    final result = await Navigator.push<DailyStudy>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => DailyStudyPage(daily: daily),
-      ),
-    );
-
-    if (result == null) return;
-
-    setState(() {
-      final index = studies.indexWhere((e) => e.id == result.id);
-
-      if (index >= 0) {
-        studies[index] = result;
-      }
-
-      studies.sort((a, b) => b.date.compareTo(a.date));
-    });
-
-    await Store.save(studies);
-  }
-
-  Future<void> _delete(DailyStudy daily) async {
-    final yes = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Delete daily study?'),
-        content: Text(
-          'Delete the complete study for ${daily.date}?',
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Bitaniya Bible Study',
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (yes != true) return;
-
-    setState(() {
-      studies.removeWhere((e) => e.id == daily.id);
-    });
-
-    await Store.save(studies);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Bitaniya Bible Study'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.brown.shade800,
-      ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.pink.shade50,
-                        Colors.orange.shade50,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.pink.shade100,
-                    ),
-                  ),
-                  child: const Column(
-                    children: [
-                      Text('📖', style: TextStyle(fontSize: 42)),
-                      SizedBox(height: 6),
-                      Text(
-                        'BITANIYA BIBLE STUDY',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.brown,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 6),
-                      Text(
-                        'Study multiple Bible chapters every day in one organized journal.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.black54),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                FilledButton.icon(
-                  onPressed: _createDailyStudy,
-                  icon: const Icon(Icons.add),
-                  label: const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Text(
-                      'CREATE NEW DAILY STUDY',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                const Heading('MY DAILY STUDIES'),
-
-                const SizedBox(height: 8),
-
-                if (studies.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: Colors.grey.shade300,
-                      ),
-                    ),
-                    child: const Column(
-                      children: [
-                        Icon(
-                          Icons.calendar_month_outlined,
-                          size: 48,
-                          color: Colors.grey,
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'No daily studies yet.',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Create your first daily study. '
-                          'You can add as many chapters as you want.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.black54),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  ...studies.map(
-                    (daily) => Card(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(12),
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.pink.shade50,
-                          child: Icon(
-                            Icons.menu_book,
-                            color: Colors.pink.shade700,
-                          ),
-                        ),
-                        title: Text(
-                          daily.date,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 5),
-                          child: Text(
-                            '${daily.chapters.length} '
-                            '${daily.chapters.length == 1 ? 'chapter' : 'chapters'} • '
-                            '${daily.completedCount} completed • '
-                            'Goal: ${daily.goal}',
-                          ),
-                        ),
-                        trailing: PopupMenuButton<String>(
-                          onSelected: (value) {
-                            if (value == 'open') {
-                              _open(daily);
-                            }
-
-                            if (value == 'delete') {
-                              _delete(daily);
-                            }
-                          },
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(
-                              value: 'open',
-                              child: Text('Open / Edit'),
-                            ),
-                            PopupMenuItem(
-                              value: 'delete',
-                              child: Text('Delete'),
-                            ),
-                          ],
-                        ),
-                        onTap: () => _open(daily),
-                      ),
-                    ),
-                  ),
-
-                const SizedBox(height: 24),
-
-                const Heading('TOOLS'),
-
-                ToolCard(
-                  'New Testament Reading Tracker',
-                  'Track every New Testament chapter. Progress saves automatically.',
-                  Icons.check_circle_outline,
-                  const TrackerPage(),
-                ),
-              ],
-            ),
-    );
-  }
-}
-
-// ============================================================
-// DAILY STUDY PAGE
-// ============================================================
-
-class DailyStudyPage extends StatefulWidget {
-  final DailyStudy daily;
-
-  const DailyStudyPage({
-    super.key,
-    required this.daily,
-  });
-
-  @override
-  State<DailyStudyPage> createState() => _DailyStudyPageState();
-}
-
-class _DailyStudyPageState extends State<DailyStudyPage> {
-  late DailyStudy daily;
-  late TextEditingController dateController;
-  late TextEditingController goalController;
-
-  @override
-  void initState() {
-    super.initState();
-
-    daily = widget.daily;
-
-    dateController = TextEditingController(
-      text: daily.date,
-    );
-
-    goalController = TextEditingController(
-      text: daily.goal.toString(),
-    );
-  }
-
-  @override
-  void dispose() {
-    dateController.dispose();
-    goalController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickDate() async {
-    final current =
-        DateTime.tryParse(dateController.text) ?? DateTime.now();
-
-    final selected = await showDatePicker(
-      context: context,
-      initialDate: current,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-
-    if (selected != null) {
-      setState(() {
-        dateController.text = fmt(selected);
-        daily.date = fmt(selected);
-      });
-    }
-  }
-
-  void _updateGoal() {
-    final value = int.tryParse(goalController.text.trim());
-
-    setState(() {
-      daily.goal = value == null || value < 0 ? 3 : value;
-    });
-  }
-
-  Future<void> _addChapter() async {
-    final chapter = ChapterStudy(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
-    );
-
-    final result = await Navigator.push<ChapterStudy>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChapterStudyPage(chapter: chapter),
-      ),
-    );
-
-    if (result == null) return;
-
-    setState(() {
-      daily.chapters.add(result);
-    });
-  }
-
-  Future<void> _editChapter(ChapterStudy chapter) async {
-    final result = await Navigator.push<ChapterStudy>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ChapterStudyPage(chapter: chapter),
-      ),
-    );
-
-    if (result == null) return;
-
-    setState(() {
-      final index =
-          daily.chapters.indexWhere((e) => e.id == result.id);
-
-      if (index >= 0) {
-        daily.chapters[index] = result;
-      }
-    });
-  }
-
-  void _toggleComplete(ChapterStudy chapter, bool value) {
-    setState(() {
-      chapter.completed = value;
-    });
-  }
-
-  void _removeChapter(ChapterStudy chapter) {
-    setState(() {
-      daily.chapters.removeWhere((e) => e.id == chapter.id);
-    });
-  }
-
-  void _saveDaily() {
-    daily.date = dateController.text.trim();
-
-    final goal = int.tryParse(goalController.text.trim());
-
-    if (goal != null && goal >= 0) {
-      daily.goal = goal;
-    }
-
-    Navigator.pop(context, daily);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final total = daily.chapters.length;
-    final completed = daily.completedCount;
-
-    final progress = total == 0 ? 0.0 : completed / total;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Daily Bible Study'),
-        backgroundColor: Colors.pink.shade50,
-        foregroundColor: Colors.brown.shade800,
-        actions: [
           IconButton(
-            tooltip: 'Save',
-            onPressed: _saveDaily,
-            icon: const Icon(Icons.save),
+            tooltip: 'Backup & Restore',
+            icon: const Icon(Icons.backup_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const BackupPage(),
+                ),
+              );
+            },
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Heading('📅 DAILY BIBLE STUDY'),
-
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: Colors.pink.shade100,
-              ),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: dateController,
-                        readOnly: true,
-                        decoration: const InputDecoration(
-                          labelText: 'DATE',
-                          prefixIcon:
-                              Icon(Icons.calendar_today),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton.filledTonal(
-                      onPressed: _pickDate,
-                      icon: const Icon(Icons.edit_calendar),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: goalController,
-                        keyboardType: TextInputType.number,
-                        onChanged: (_) => _updateGoal(),
-                        decoration: const InputDecoration(
-                          labelText: 'DAILY CHAPTER GOAL',
-                          helperText:
-                              '3 is the default. Change it or use 0 for no goal.',
-                          prefixIcon:
-                              Icon(Icons.flag_outlined),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          Container(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.pink.shade50,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: 900,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'TODAY\'S PROGRESS',
+                      'Bitaniya Bible Study',
                       style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF74455A),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      'Read. Study. Understand. Apply.',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+
+                    const SizedBox(height: 22),
+
+                    _mainCard(
+                      context,
+                      icon: Icons.today_outlined,
+                      title: 'Daily Study',
+                      subtitle:
+                          'Study one or several chapters today.',
+                      color: const Color(0xFFFFEAF2),
+                      page: const DailyStudyPage(),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _mainCard(
+                      context,
+                      icon: Icons.menu_book_outlined,
+                      title: 'Chapter Study',
+                      subtitle:
+                          'Go deeper into one chapter using the complete study questions.',
+                      color: Colors.white,
+                      page: const ChapterStudyPage(),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _mainCard(
+                      context,
+                      icon: Icons.check_circle_outline,
+                      title: 'New Testament Tracker',
+                      subtitle:
+                          'Track your progress chapter by chapter.',
+                      color: const Color(0xFFEAF2FF),
+                      page: const TrackerPage(),
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    const Text(
+                      'Recent Daily Studies',
+                      style: TextStyle(
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Text(
-                      '$completed / $total',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.pink.shade800,
-                      ),
+
+                    const SizedBox(height: 10),
+
+                    if (studies.isEmpty)
+                      _emptyCard()
+                    else
+                      ...studies.reversed.take(5).map(
+                            (study) => _recentStudy(
+                              context,
+                              study,
+                            ),
+                          ),
+
+                    const SizedBox(height: 20),
+
+                    _mainCard(
+                      context,
+                      icon: Icons.backup_outlined,
+                      title: 'Backup & Restore',
+                      subtitle:
+                          'Save all your studies and tracker progress.',
+                      color: Colors.white,
+                      page: const BackupPage(),
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 10),
-
-                LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 9,
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  total == 0
-                      ? 'Add your first chapter below.'
-                      : '$completed of $total chapters completed',
-                  style: const TextStyle(
-                    color: Colors.black54,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          Row(
-            children: [
-              const Expanded(
-                child: Heading('📚 TODAY\'S CHAPTERS'),
               ),
-              FilledButton.icon(
-                onPressed: _addChapter,
-                icon: const Icon(Icons.add),
-                label: const Text('Add Chapter'),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _mainCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required Widget page,
+  }) {
+    return Card(
+      color: color,
+      elevation: 1,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => page,
+            ),
+          );
+
+          refresh();
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 27,
+                backgroundColor: Colors.white,
+                child: Icon(
+                  icon,
+                  color: const Color(0xFF9A5C78),
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(subtitle),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
 
-          const SizedBox(height: 8),
-
-          if (daily.chapters.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: Colors.grey.shade300,
-                ),
+  Widget _emptyCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(
+                Icons.menu_book_outlined,
+                size: 40,
+                color: Colors.grey.shade400,
               ),
-              child: const Column(
-                children: [
-                  Icon(
-                    Icons.library_add_outlined,
-                    size: 42,
-                    color: Colors.grey,
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'No chapters added yet.',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Tap "Add Chapter" to add Matthew 1, '
-                    'Matthew 2, Matthew 3, or as many chapters '
-                    'as you want.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.black54,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            ...daily.chapters.asMap().entries.map(
-              (entry) {
-                final index = entry.key;
-                final chapter = entry.value;
-
-                final title = chapter.book.isEmpty
-                    ? 'Chapter ${index + 1}'
-                    : '${chapter.book} ${chapter.chapter}'.trim();
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Row(
-                      children: [
-                        Checkbox(
-                          value: chapter.completed,
-                          onChanged: (value) {
-                            _toggleComplete(
-                              chapter,
-                              value ?? false,
-                            );
-                          },
-                        ),
-                        Expanded(
-                          child: ListTile(
-                            contentPadding:
-                                const EdgeInsets.symmetric(
-                              horizontal: 4,
-                            ),
-                            title: Text(
-                              title,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                decoration:
-                                    chapter.completed
-                                        ? TextDecoration
-                                            .lineThrough
-                                        : null,
-                              ),
-                            ),
-                            subtitle: Text(
-                              chapter.passage.isEmpty
-                                  ? 'Tap to open the complete study'
-                                  : chapter.passage,
-                              maxLines: 2,
-                              overflow:
-                                  TextOverflow.ellipsis,
-                            ),
-                            onTap: () =>
-                                _editChapter(chapter),
-                          ),
-                        ),
-                        PopupMenuButton<String>(
-                          onSelected: (value) {
-                            if (value == 'edit') {
-                              _editChapter(chapter);
-                            }
-
-                            if (value == 'delete') {
-                              _removeChapter(chapter);
-                            }
-                          },
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(
-                              value: 'edit',
-                              child: Text('Open / Edit'),
-                            ),
-                            PopupMenuItem(
-                              value: 'delete',
-                              child: Text('Remove'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-
-          const SizedBox(height: 20),
-
-          FilledButton.icon(
-            onPressed: _saveDaily,
-            icon: const Icon(Icons.save),
-            label: const Padding(
-              padding: EdgeInsets.all(14),
-              child: Text(
-                'SAVE DAILY STUDY',
+              const SizedBox(height: 8),
+              const Text(
+                'No daily studies yet.',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
+              const SizedBox(height: 4),
+              const Text(
+                'Start your first study from Daily Study.',
+              ),
+            ],
           ),
+        ),
+      ),
+    );
+  }
 
-          const SizedBox(height: 30),
-        ],
+  Widget _recentStudy(
+    BuildContext context,
+    Map<String, dynamic> study,
+  ) {
+    final chapters = study['chapters'] as List? ?? [];
+
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.book_outlined),
+        title: Text(
+          study['date']?.toString() ?? 'Study',
+        ),
+        subtitle: Text(
+          '${chapters.length} chapter'
+          '${chapters.length == 1 ? '' : 's'}',
+        ),
+        trailing: const Icon(
+          Icons.chevron_right,
+        ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => DailyStudyPage(
+                existingStudy: study,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 }
 
 // ============================================================
-// CHAPTER STUDY PAGE
+// DAILY STUDY
+// ============================================================
+
+class DailyStudyPage extends StatefulWidget {
+  final Map<String, dynamic>? existingStudy;
+
+  const DailyStudyPage({
+    super.key,
+    this.existingStudy,
+  });
+
+  @override
+  State<DailyStudyPage> createState() =>
+      _DailyStudyPageState();
+}
+
+class _DailyStudyPageState
+    extends State<DailyStudyPage> {
+  late DateTime date;
+
+  final List<ChapterEntry> chapters = [];
+
+  final overall = TextEditingController();
+  final memoryVerse = TextEditingController();
+  final prayer = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+
+    final existing = widget.existingStudy;
+
+    date = existing == null
+        ? DateTime.now()
+        : DateTime.tryParse(
+              existing['date']?.toString() ?? '',
+            ) ??
+            DateTime.now();
+
+    if (existing != null) {
+      final savedChapters =
+          existing['chapters'] as List? ?? [];
+
+      for (final item in savedChapters) {
+        chapters.add(
+          ChapterEntry.fromMap(
+            Map<String, dynamic>.from(item),
+          ),
+        );
+      }
+
+      overall.text =
+          existing['overall']?.toString() ?? '';
+
+      memoryVerse.text =
+          existing['memoryVerse']?.toString() ?? '';
+
+      prayer.text =
+          existing['prayer']?.toString() ?? '';
+    }
+
+    // Default to three chapters.
+    if (chapters.isEmpty) {
+      addChapter();
+      addChapter();
+      addChapter();
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final chapter in chapters) {
+      chapter.dispose();
+    }
+
+    overall.dispose();
+    memoryVerse.dispose();
+    prayer.dispose();
+
+    super.dispose();
+  }
+
+  void addChapter() {
+    setState(() {
+      chapters.add(ChapterEntry());
+    });
+  }
+
+  void removeChapter(int index) {
+    if (chapters.length == 1) return;
+
+    final removed = chapters.removeAt(index);
+    removed.dispose();
+
+    setState(() {});
+  }
+
+  Future<void> chooseDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: date,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      setState(() {
+        date = picked;
+      });
+    }
+  }
+
+  void save() {
+    final all = AppStorage.studies();
+
+    final study = {
+      'date': date.toIso8601String(),
+      'chapters':
+          chapters.map((e) => e.toMap()).toList(),
+      'overall': overall.text,
+      'memoryVerse': memoryVerse.text,
+      'prayer': prayer.text,
+    };
+
+    final index = all.indexWhere(
+      (item) => item['date'] == study['date'],
+    );
+
+    if (index >= 0) {
+      all[index] = study;
+    } else {
+      all.add(study);
+    }
+
+    AppStorage.saveStudies(all);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Daily study saved.',
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Daily Study'),
+        actions: [
+          IconButton(
+            tooltip: 'Save',
+            onPressed: save,
+            icon: const Icon(Icons.save_outlined),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(14),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: 850,
+            ),
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Card(
+                  color: const Color(0xFFFFF0F5),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Today\'s Bible Study',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        const Text(
+                          'Choose any number of chapters. '
+                          'Three is only the suggested starting point.',
+                        ),
+                        const SizedBox(height: 15),
+
+                        InkWell(
+                          onTap: chooseDate,
+                          child: InputDecorator(
+                            decoration:
+                                const InputDecoration(
+                              labelText: 'Study Date',
+                              prefixIcon:
+                                  Icon(Icons.calendar_today),
+                            ),
+                            child: Text(
+                              _dateText(date),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Chapters',
+                        style: TextStyle(
+                          fontSize: 21,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    FilledButton.icon(
+                      onPressed: addChapter,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add'),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 6),
+
+                Text(
+                  '${chapters.length} chapter'
+                  '${chapters.length == 1 ? '' : 's'} today',
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                ...List.generate(
+                  chapters.length,
+                  (index) => _chapterCard(index),
+                ),
+
+                const SizedBox(height: 15),
+
+                _simpleSection(
+                  title: 'Overall Takeaway',
+                  icon: Icons.lightbulb_outline,
+                  controller: overall,
+                  hint:
+                      'What is the biggest thing you learned today?',
+                  lines: 5,
+                ),
+
+                _simpleSection(
+                  title: 'Memory Verse',
+                  icon: Icons.bookmark_outline,
+                  controller: memoryVerse,
+                  hint:
+                      'Write a verse you want to remember.',
+                  lines: 3,
+                ),
+
+                _simpleSection(
+                  title: 'Prayer',
+                  icon: Icons.favorite_border,
+                  controller: prayer,
+                  hint:
+                      'Respond to what you learned in prayer.',
+                  lines: 5,
+                ),
+
+                const SizedBox(height: 15),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: save,
+                    icon: const Icon(Icons.save),
+                    label: const Padding(
+                      padding: EdgeInsets.symmetric(
+                        vertical: 14,
+                      ),
+                      child: Text(
+                        'SAVE DAILY STUDY',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _chapterCard(int index) {
+    final chapter = chapters[index];
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 14),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 17,
+                  child: Text('${index + 1}'),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Chapter ${index + 1}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: chapters.length > 1
+                      ? () => removeChapter(index)
+                      : null,
+                  icon: const Icon(
+                    Icons.delete_outline,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            _field(
+              chapter.reference,
+              'Book / Chapter',
+              'Example: Romans 8',
+              1,
+            ),
+
+            const SizedBox(height: 10),
+
+            _field(
+              chapter.summary,
+              'What is happening?',
+              'Briefly summarize the chapter.',
+              4,
+            ),
+
+            const SizedBox(height: 10),
+
+            _field(
+              chapter.noticed,
+              'What stood out to me?',
+              'Important details, repeated ideas, commands, promises...',
+              4,
+            ),
+
+            const SizedBox(height: 10),
+
+            _field(
+              chapter.keyVerse,
+              'Key Verse',
+              'Verse or reference that stood out.',
+              3,
+            ),
+
+            const SizedBox(height: 10),
+
+            _field(
+              chapter.application,
+              'How can I apply this?',
+              'How should this change my thinking or actions?',
+              4,
+            ),
+
+            const SizedBox(height: 8),
+
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          ChapterStudyPage(
+                        initialReference:
+                            chapter.reference.text,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(
+                  Icons.open_in_new,
+                  size: 18,
+                ),
+                label: const Text(
+                  'Open detailed Chapter Study',
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _field(
+    TextEditingController controller,
+    String label,
+    String hint,
+    int lines,
+  ) {
+    return TextField(
+      controller: controller,
+      maxLines: lines,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        alignLabelWithHint: true,
+      ),
+    );
+  }
+
+  Widget _simpleSection({
+    required String title,
+    required IconData icon,
+    required TextEditingController controller,
+    required String hint,
+    required int lines,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: controller,
+              maxLines: lines,
+              decoration: InputDecoration(
+                hintText: hint,
+                alignLabelWithHint: true,
+                border: InputBorder.none,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _dateText(DateTime d) {
+    return '${d.year}-'
+        '${d.month.toString().padLeft(2, '0')}-'
+        '${d.day.toString().padLeft(2, '0')}';
+  }
+}
+
+// ============================================================
+// CHAPTER ENTRY
+// ============================================================
+
+class ChapterEntry {
+  final reference = TextEditingController();
+  final summary = TextEditingController();
+  final noticed = TextEditingController();
+  final keyVerse = TextEditingController();
+  final application = TextEditingController();
+
+  ChapterEntry();
+
+  ChapterEntry.fromMap(Map<String, dynamic> map) {
+    reference.text =
+        map['reference']?.toString() ?? '';
+    summary.text =
+        map['summary']?.toString() ?? '';
+    noticed.text =
+        map['noticed']?.toString() ?? '';
+    keyVerse.text =
+        map['keyVerse']?.toString() ?? '';
+    application.text =
+        map['application']?.toString() ?? '';
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'reference': reference.text,
+      'summary': summary.text,
+      'noticed': noticed.text,
+      'keyVerse': keyVerse.text,
+      'application': application.text,
+    };
+  }
+
+  void dispose() {
+    reference.dispose();
+    summary.dispose();
+    noticed.dispose();
+    keyVerse.dispose();
+    application.dispose();
+  }
+}
+
+// ============================================================
+// CHAPTER STUDY
 // ============================================================
 
 class ChapterStudyPage extends StatefulWidget {
-  final ChapterStudy chapter;
+  final String? initialReference;
 
   const ChapterStudyPage({
     super.key,
-    required this.chapter,
+    this.initialReference,
   });
 
   @override
@@ -1035,566 +965,436 @@ class ChapterStudyPage extends StatefulWidget {
 
 class _ChapterStudyPageState
     extends State<ChapterStudyPage> {
-  late final Map<String, TextEditingController> c;
+  final book = TextEditingController();
+  final chapter = TextEditingController();
+  final date = TextEditingController();
+  final passage = TextEditingController();
+
+  final happening = TextEditingController();
+  final people = TextEditingController();
+  final context = TextEditingController();
+
+  final details = TextEditingController();
+  final repeated = TextEditingController();
+  final important = TextEditingController();
+
+  final mainPoint = TextEditingController();
+  final god = TextEditingController();
+  final christ = TextEditingController();
+  final peopleMeaning = TextEditingController();
+  final difficult = TextEditingController();
+
+  final command = TextEditingController();
+  final example = TextEditingController();
+  final promise = TextEditingController();
+  final application = TextEditingController();
+
+  final keyVerse = TextEditingController();
+  final takeaway = TextEditingController();
+  final furtherStudy = TextEditingController();
+  final prayer = TextEditingController();
 
   @override
   void initState() {
     super.initState();
 
-    final e = widget.chapter;
-
-    c = {
-      'book': TextEditingController(text: e.book),
-      'chapter': TextEditingController(text: e.chapter),
-      'passage': TextEditingController(text: e.passage),
-
-      'character': TextEditingController(text: e.character),
-      'knownFor': TextEditingController(text: e.knownFor),
-      'charBooks': TextEditingController(text: e.charBooks),
-      'charChapters': TextEditingController(text: e.charChapters),
-      'charStory': TextEditingController(text: e.charStory),
-      'traits': TextEditingController(text: e.traits),
-      'charVerses': TextEditingController(text: e.charVerses),
-      'charLearn': TextEditingController(text: e.charLearn),
-      'charApply': TextEditingController(text: e.charApply),
-      'charChallenges':
-          TextEditingController(text: e.charChallenges),
-      'charGodUsed':
-          TextEditingController(text: e.charGodUsed),
-      'charTakeaway':
-          TextEditingController(text: e.charTakeaway),
-      'charPrayer':
-          TextEditingController(text: e.charPrayer),
-
-      'summary': TextEditingController(text: e.summary),
-      'chapterCharacters':
-          TextEditingController(text: e.chapterCharacters),
-      'concepts':
-          TextEditingController(text: e.concepts),
-      'chapterChallenge':
-          TextEditingController(text: e.chapterChallenge),
-      'chapterVerse':
-          TextEditingController(text: e.chapterVerse),
-
-      'noticed':
-          TextEditingController(text: e.noticed),
-      'remember':
-          TextEditingController(text: e.remember),
-      'aboutGod':
-          TextEditingController(text: e.aboutGod),
-      'aboutChrist':
-          TextEditingController(text: e.aboutChrist),
-      'aboutHumans':
-          TextEditingController(text: e.aboutHumans),
-      'response':
-          TextEditingController(text: e.response),
-
-      'questions':
-          TextEditingController(text: e.questions),
-      'lifeApplication':
-          TextEditingController(text: e.lifeApplication),
-      'studyFurther':
-          TextEditingController(text: e.studyFurther),
-      'teaching':
-          TextEditingController(text: e.teaching),
-      'memoryVerse':
-          TextEditingController(text: e.memoryVerse),
-      'reflectionPrayer':
-          TextEditingController(text: e.reflectionPrayer),
-    };
+    if (widget.initialReference != null &&
+        widget.initialReference!.isNotEmpty) {
+      passage.text = widget.initialReference!;
+    }
   }
 
   @override
   void dispose() {
-    for (final controller in c.values) {
-      controller.dispose();
+    for (final c in [
+      book,
+      chapter,
+      date,
+      passage,
+      happening,
+      people,
+      context,
+      details,
+      repeated,
+      important,
+      mainPoint,
+      god,
+      christ,
+      peopleMeaning,
+      difficult,
+      command,
+      example,
+      promise,
+      application,
+      keyVerse,
+      takeaway,
+      furtherStudy,
+      prayer,
+    ]) {
+      c.dispose();
     }
 
     super.dispose();
   }
 
-  String value(String key) => c[key]!.text.trim();
-
   Widget field(
-    String key,
-    String label, {
-    int lines = 3,
+    TextEditingController controller,
+    String label,
+    String hint, {
+    int lines = 4,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(
+        bottom: 13,
+      ),
       child: TextField(
-        controller: c[key],
+        controller: controller,
         maxLines: lines,
         decoration: InputDecoration(
           labelText: label,
+          hintText: hint,
           alignLabelWithHint: true,
         ),
       ),
     );
   }
 
-  void save() {
-    final e = widget.chapter;
-
-    e.book = value('book');
-    e.chapter = value('chapter');
-    e.passage = value('passage');
-
-    e.character = value('character');
-    e.knownFor = value('knownFor');
-    e.charBooks = value('charBooks');
-    e.charChapters = value('charChapters');
-    e.charStory = value('charStory');
-    e.traits = value('traits');
-    e.charVerses = value('charVerses');
-    e.charLearn = value('charLearn');
-    e.charApply = value('charApply');
-    e.charChallenges = value('charChallenges');
-    e.charGodUsed = value('charGodUsed');
-    e.charTakeaway = value('charTakeaway');
-    e.charPrayer = value('charPrayer');
-
-    e.summary = value('summary');
-    e.chapterCharacters = value('chapterCharacters');
-    e.concepts = value('concepts');
-    e.chapterChallenge = value('chapterChallenge');
-    e.chapterVerse = value('chapterVerse');
-
-    e.noticed = value('noticed');
-    e.remember = value('remember');
-    e.aboutGod = value('aboutGod');
-    e.aboutChrist = value('aboutChrist');
-    e.aboutHumans = value('aboutHumans');
-    e.response = value('response');
-
-    e.questions = value('questions');
-    e.lifeApplication = value('lifeApplication');
-    e.studyFurther = value('studyFurther');
-    e.teaching = value('teaching');
-    e.memoryVerse = value('memoryVerse');
-    e.reflectionPrayer = value('reflectionPrayer');
-
-    Navigator.pop(context, e);
+  Widget section({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required List<Widget> children,
+    bool initiallyExpanded = true,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(
+        bottom: 12,
+      ),
+      child: ExpansionTile(
+        initiallyExpanded: initiallyExpanded,
+        leading: CircleAvatar(
+          backgroundColor:
+              const Color(0xFFF4E8ED),
+          child: Icon(
+            icon,
+            color: const Color(0xFF74455A),
+          ),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 17,
+          ),
+        ),
+        subtitle: Text(subtitle),
+        childrenPadding: const EdgeInsets.fromLTRB(
+          16,
+          0,
+          16,
+          10,
+        ),
+        children: children,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chapter Bible Study'),
-        backgroundColor: Colors.pink.shade50,
-        foregroundColor: Colors.brown.shade800,
-        actions: [
-          IconButton(
-            onPressed: save,
-            icon: const Icon(Icons.save),
-          ),
-        ],
+        title: const Text(
+          'Chapter Study',
+        ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Heading('📖 CHAPTER STUDY'),
-
-          Responsive([
-            field('book', 'BOOK', lines: 1),
-            field('chapter', 'CHAPTER', lines: 1),
-          ]),
-
-          field(
-            'passage',
-            'TODAY\'S PASSAGE / REFERENCE',
-            lines: 3,
-          ),
-
-          Section(
-            '1',
-            'BIBLE CHARACTER STUDY',
-            'Learning from their story. Growing in our faith.',
-            Colors.pink,
-            [
-              Responsive([
-                field('character', 'CHARACTER', lines: 1),
-                field('knownFor', 'KNOWN FOR', lines: 1),
-              ]),
-              Responsive([
-                field('charBooks', 'BOOK(S)', lines: 1),
-                field('charChapters', 'CHAPTER(S)', lines: 1),
-              ]),
-              field(
-                'charStory',
-                'TELL THEIR STORY IN YOUR OWN WORDS',
-                lines: 6,
-              ),
-              Responsive([
-                field(
-                  'traits',
-                  'TRAITS — WHAT WORDS DESCRIBE THIS PERSON?',
-                  lines: 5,
-                ),
-                field(
-                  'charVerses',
-                  'KEY VERSE(S)',
-                  lines: 5,
-                ),
-              ]),
-              field(
-                'charLearn',
-                'WHAT CAN WE LEARN FROM THEIR LIFE?',
-                lines: 5,
-              ),
-              field(
-                'charApply',
-                'HOW CAN WE APPLY THIS TO OUR LIFE TODAY?',
-                lines: 5,
-              ),
-              Responsive([
-                field(
-                  'charChallenges',
-                  'CHALLENGES — STRUGGLES, MISTAKES, OR HARD MOMENTS',
-                  lines: 5,
-                ),
-                field(
-                  'charGodUsed',
-                  'HOW GOD USED THEM',
-                  lines: 5,
-                ),
-              ]),
-              field(
-                'charTakeaway',
-                'BIGGEST TAKEAWAY',
-                lines: 4,
-              ),
-              field(
-                'charPrayer',
-                'A PRAYER',
-                lines: 5,
-              ),
-            ],
-          ),
-
-          Section(
-            '2',
-            'CHAPTER STUDY',
-            'Passage summary, key concepts, and challenges.',
-            Colors.brown,
-            [
-              field('summary', 'SUMMARY', lines: 6),
-              Responsive([
-                field(
-                  'chapterCharacters',
-                  'CHARACTERS',
-                  lines: 5,
-                ),
-                field(
-                  'concepts',
-                  'KEY CONCEPTS',
-                  lines: 5,
-                ),
-              ]),
-              field(
-                'chapterChallenge',
-                'SOMETHING THAT CHALLENGED ME',
-                lines: 5,
-              ),
-              field(
-                'chapterVerse',
-                'A VERSE THAT STOOD OUT',
-                lines: 4,
-              ),
-            ],
-          ),
-
-          Section(
-            '3',
-            'QUIET TIME NOTES',
-            'What this says about God, Christ, humans, and response.',
-            Colors.teal,
-            [
-              Responsive([
-                field(
-                  'noticed',
-                  '3 THINGS I NOTICED',
-                  lines: 5,
-                ),
-                field(
-                  'remember',
-                  '3 THINGS TO REMEMBER',
-                  lines: 5,
-                ),
-              ]),
-              Responsive([
-                field(
-                  'aboutGod',
-                  'WHAT DOES THIS SAY ABOUT GOD?',
-                  lines: 5,
-                ),
-                field(
-                  'aboutChrist',
-                  'WHAT DOES THIS SAY ABOUT CHRIST?',
-                  lines: 5,
-                ),
-              ]),
-              Responsive([
-                field(
-                  'aboutHumans',
-                  'WHAT DOES THIS SAY ABOUT HUMANS?',
-                  lines: 5,
-                ),
-                field(
-                  'response',
-                  'HOW SHOULD WE RESPOND?',
-                  lines: 5,
-                ),
-              ]),
-            ],
-          ),
-
-          Section(
-            '4',
-            'REFLECTION JOURNAL',
-            'Questions, application, memory verse, and prayer.',
-            Colors.indigo,
-            [
-              Responsive([
-                field(
-                  'questions',
-                  'WHAT QUESTIONS DO I HAVE?',
-                  lines: 5,
-                ),
-                field(
-                  'lifeApplication',
-                  'HOW DOES THIS APPLY TO MY LIFE?',
-                  lines: 5,
-                ),
-              ]),
-              field(
-                'studyFurther',
-                'WHAT DO I NEED TO STUDY FURTHER?',
-                lines: 5,
-              ),
-              field(
-                'teaching',
-                'WHAT IS THIS CHAPTER TEACHING ME?',
-                lines: 7,
-              ),
-              field(
-                'memoryVerse',
-                'MEMORY VERSE',
-                lines: 4,
-              ),
-              field(
-                'reflectionPrayer',
-                'PRAYER',
-                lines: 6,
-              ),
-            ],
-          ),
-
-          FilledButton.icon(
-            onPressed: save,
-            icon: const Icon(Icons.save),
-            label: const Padding(
-              padding: EdgeInsets.all(14),
-              child: Text(
-                'SAVE CHAPTER STUDY',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(14),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: 850,
             ),
-          ),
-
-          const SizedBox(height: 30),
-        ],
-      ),
-    );
-  }
-}
-
-// ============================================================
-// REUSABLE UI
-// ============================================================
-
-class Heading extends StatelessWidget {
-  final String text;
-
-  const Heading(
-    this.text, {
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.brown,
-        ),
-      ),
-    );
-  }
-}
-
-class ToolCard extends StatelessWidget {
-  final String title;
-  final String sub;
-  final IconData icon;
-  final Widget page;
-
-  const ToolCard(
-    this.title,
-    this.sub,
-    this.icon,
-    this.page, {
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Icon(
-          icon,
-          color: Colors.brown.shade500,
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        subtitle: Text(sub),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 15,
-        ),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => page,
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class Section extends StatelessWidget {
-  final String number;
-  final String title;
-  final String subtitle;
-  final MaterialColor color;
-  final List<Widget> children;
-
-  const Section(
-    this.number,
-    this.title,
-    this.subtitle,
-    this.color,
-    this.children, {
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: color.shade50.withOpacity(.45),
-        border: Border.all(
-          color: color.shade200,
-        ),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                radius: 17,
-                backgroundColor: color.shade100,
-                foregroundColor: color.shade800,
-                child: Text(
-                  number,
-                  style: const TextStyle(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '📖 CHAPTER STUDY',
+                  style: TextStyle(
+                    fontSize: 26,
                     fontWeight: FontWeight.bold,
+                    color: Color(0xFF74455A),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+
+                const SizedBox(height: 5),
+
+                const Text(
+                  'Observe → Understand → Apply → Remember',
+                ),
+
+                const SizedBox(height: 18),
+
+                // ------------------------------------------------
+                // INFORMATION
+                // ------------------------------------------------
+
+                section(
+                  title: 'Chapter Information',
+                  subtitle:
+                      'Start with the basic information.',
+                  icon: Icons.menu_book_outlined,
                   children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                        color: color.shade800,
-                      ),
+                    field(
+                      book,
+                      'Book',
+                      'Example: Romans',
+                      lines: 1,
                     ),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
-                      ),
+                    field(
+                      chapter,
+                      'Chapter',
+                      'Example: 8',
+                      lines: 1,
+                    ),
+                    field(
+                      date,
+                      'Date',
+                      'When did you study it?',
+                      lines: 1,
+                    ),
+                    field(
+                      passage,
+                      'Passage',
+                      'Optional verses or section.',
+                      lines: 1,
                     ),
                   ],
                 ),
-              ),
-            ],
+
+                // ------------------------------------------------
+                // WHAT IS HAPPENING
+                // ------------------------------------------------
+
+                section(
+                  title: '1. What Is Happening?',
+                  subtitle:
+                      'Understand the chapter in its context.',
+                  icon: Icons.visibility_outlined,
+                  children: [
+                    field(
+                      happening,
+                      'What is the main story, argument, or message?',
+                      'Summarize what is happening.',
+                      lines: 5,
+                    ),
+                    field(
+                      people,
+                      'Who are the important people?',
+                      'Who speaks, acts, teaches, or responds?',
+                      lines: 4,
+                    ),
+                    field(
+                      context,
+                      'What is happening before and after this chapter?',
+                      'Think about the surrounding context.',
+                      lines: 4,
+                    ),
+                  ],
+                ),
+
+                // ------------------------------------------------
+                // WHAT DOES TEXT SAY
+                // ------------------------------------------------
+
+                section(
+                  title: '2. What Does the Text Say?',
+                  subtitle:
+                      'Look carefully at the details.',
+                  icon: Icons.search_outlined,
+                  children: [
+                    field(
+                      details,
+                      'What words, ideas, commands, promises, or warnings stand out?',
+                      'Write down important observations.',
+                      lines: 5,
+                    ),
+                    field(
+                      repeated,
+                      'What is repeated or emphasized?',
+                      'Notice repeated words, ideas, or themes.',
+                      lines: 4,
+                    ),
+                    field(
+                      important,
+                      'What important details might I otherwise overlook?',
+                      'Slow down and look carefully.',
+                      lines: 4,
+                    ),
+                  ],
+                ),
+
+                // ------------------------------------------------
+                // WHAT DOES IT MEAN
+                // ------------------------------------------------
+
+                section(
+                  title: '3. What Does It Mean?',
+                  subtitle:
+                      'Think about the meaning of the passage.',
+                  icon: Icons.lightbulb_outline,
+                  children: [
+                    field(
+                      mainPoint,
+                      'What is the main point the author is making?',
+                      'What is the central message?',
+                      lines: 5,
+                    ),
+                    field(
+                      god,
+                      'What does this teach about God?',
+                      'His character, works, promises, holiness, etc.',
+                      lines: 4,
+                    ),
+                    field(
+                      christ,
+                      'What does this teach about Christ?',
+                      'His identity, work, words, example, etc.',
+                      lines: 4,
+                    ),
+                    field(
+                      peopleMeaning,
+                      'What does this teach about people?',
+                      'Human nature, sin, faith, obedience, relationships, etc.',
+                      lines: 4,
+                    ),
+                    field(
+                      difficult,
+                      'Is there anything difficult or confusing to investigate?',
+                      'Write questions instead of guessing the answer.',
+                      lines: 4,
+                    ),
+                  ],
+                ),
+
+                // ------------------------------------------------
+                // APPLY
+                // ------------------------------------------------
+
+                section(
+                  title: '4. What Should I Do With It?',
+                  subtitle:
+                      'Turn understanding into action.',
+                  icon: Icons.directions_outlined,
+                  children: [
+                    field(
+                      command,
+                      'Is there a command I should obey?',
+                      'What does the passage tell me to do?',
+                      lines: 4,
+                    ),
+                    field(
+                      example,
+                      'Is there an example I should follow or avoid?',
+                      'Consider both positive and negative examples.',
+                      lines: 4,
+                    ),
+                    field(
+                      promise,
+                      'Is there a promise or truth I should trust?',
+                      'What should I believe or remember?',
+                      lines: 4,
+                    ),
+                    field(
+                      application,
+                      'How should this change the way I think or live?',
+                      'Give yourself a specific application.',
+                      lines: 5,
+                    ),
+                  ],
+                ),
+
+                // ------------------------------------------------
+                // REMEMBER
+                // ------------------------------------------------
+
+                section(
+                  title: '5. Remember',
+                  subtitle:
+                      'Keep the most important things.',
+                  icon: Icons.bookmark_outline,
+                  children: [
+                    field(
+                      keyVerse,
+                      'Key Verse',
+                      'Verse or passage you want to remember.',
+                      lines: 3,
+                    ),
+                    field(
+                      takeaway,
+                      'Biggest Takeaway',
+                      'If you could remember one thing, what would it be?',
+                      lines: 4,
+                    ),
+                    field(
+                      furtherStudy,
+                      'Questions for Further Study',
+                      'Things you want to investigate later.',
+                      lines: 4,
+                    ),
+                  ],
+                ),
+
+                // ------------------------------------------------
+                // RESPONSE
+                // ------------------------------------------------
+
+                section(
+                  title: '6. Personal Response',
+                  subtitle:
+                      'Respond to what you learned.',
+                  icon: Icons.favorite_border,
+                  children: [
+                    field(
+                      prayer,
+                      'Prayer',
+                      'Talk to God about what you learned.',
+                      lines: 6,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                const Card(
+                  color: Color(0xFFFFF1F5),
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Row(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Not every question needs an answer for every chapter. '
+                            'Skip anything that does not apply and focus on what the text actually says.',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          ...children,
-        ],
+        ),
       ),
-    );
-  }
-}
-
-class Responsive extends StatelessWidget {
-  final List<Widget> children;
-
-  const Responsive(
-    this.children, {
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 720) {
-          return Column(
-            children: children,
-          );
-        }
-
-        return Row(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-            Expanded(child: children[0]),
-            const SizedBox(width: 12),
-            Expanded(child: children[1]),
-          ],
-        );
-      },
     );
   }
 }
@@ -1611,11 +1411,9 @@ class TrackerPage extends StatefulWidget {
       _TrackerPageState();
 }
 
-class _TrackerPageState extends State<TrackerPage> {
-  static const String storageKey =
-      'bitaniya_nt_tracker_v2';
-
-  final Map<String, int> books = const {
+class _TrackerPageState
+    extends State<TrackerPage> {
+  final Map<String, int> books = {
     'Matthew': 28,
     'Mark': 16,
     'Luke': 24,
@@ -1645,320 +1443,524 @@ class _TrackerPageState extends State<TrackerPage> {
     'Revelation': 22,
   };
 
-  final Map<String, Set<int>> read = {};
-
-  bool loading = true;
-  bool saving = false;
-
-  int get total =>
-      books.values.fold(0, (a, b) => a + b);
-
-  int get done =>
-      read.values.fold(0, (a, b) => a + b.length);
+  late Set<String> completed;
 
   @override
   void initState() {
     super.initState();
-    _loadTracker();
+    completed = AppStorage.tracker();
   }
 
-  Future<void> _loadTracker() async {
-    final prefs =
-        await SharedPreferences.getInstance();
+  int get total =>
+      books.values.fold(
+        0,
+        (sum, chapters) => sum + chapters,
+      );
 
-    final saved =
-        prefs.getStringList(storageKey) ??
-            <String>[];
+  double get progress =>
+      total == 0 ? 0 : completed.length / total;
 
-    for (final item in saved) {
-      final parts = item.split('|');
-
-      if (parts.length != 2) continue;
-
-      final chapter = int.tryParse(parts[1]);
-
-      if (chapter == null ||
-          !books.containsKey(parts[0])) {
-        continue;
-      }
-
-      read
-          .putIfAbsent(
-            parts[0],
-            () => <int>{},
-          )
-          .add(chapter);
-    }
-
-    if (mounted) {
-      setState(() {
-        loading = false;
-      });
-    }
-  }
-
-  Future<void> _saveTracker() async {
-    if (mounted) {
-      setState(() {
-        saving = true;
-      });
-    }
-
-    final all = <String>[];
-
-    for (final entry in read.entries) {
-      for (final chapter in entry.value) {
-        all.add('${entry.key}|$chapter');
-      }
-    }
-
-    all.sort();
-
-    final prefs =
-        await SharedPreferences.getInstance();
-
-    await prefs.setStringList(
-      storageKey,
-      all,
-    );
-
-    if (mounted) {
-      setState(() {
-        saving = false;
-      });
-    }
-  }
-
-  Future<void> _toggle(
+  void toggle(
     String book,
     int chapter,
-    bool selected,
-  ) async {
-    final set =
-        read.putIfAbsent(book, () => <int>{});
+  ) {
+    final key = '$book|$chapter';
 
     setState(() {
-      if (selected) {
-        set.add(chapter);
+      if (completed.contains(key)) {
+        completed.remove(key);
       } else {
-        set.remove(chapter);
+        completed.add(key);
       }
     });
 
-    await _saveTracker();
+    AppStorage.saveTracker(completed);
   }
 
-  Future<void> _reset() async {
-    final ok = await showDialog<bool>(
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'New Testament Tracker',
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Reset',
+            icon: const Icon(
+              Icons.refresh,
+            ),
+            onPressed: reset,
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(14),
+        children: [
+          Card(
+            color: const Color(0xFFEAF2FF),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                children: [
+                  const Text(
+                    'NEW TESTAMENT PROGRESS',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 10,
+                    borderRadius:
+                        BorderRadius.circular(10),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '${completed.length} / $total chapters '
+                    '(${(progress * 100).toStringAsFixed(1)}%)',
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...books.entries.map(
+            (entry) => bookCard(
+              entry.key,
+              entry.value,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget bookCard(
+    String book,
+    int chapterCount,
+  ) {
+    final finished = List.generate(
+      chapterCount,
+      (i) => i + 1,
+    ).where(
+      (chapter) =>
+          completed.contains('$book|$chapter'),
+    ).length;
+
+    return Card(
+      margin: const EdgeInsets.only(
+        bottom: 10,
+      ),
+      child: ExpansionTile(
+        title: Text(
+          book,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          '$finished / $chapterCount completed',
+        ),
+        childrenPadding:
+            const EdgeInsets.all(12),
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: List.generate(
+              chapterCount,
+              (i) {
+                final chapter = i + 1;
+                final done = completed.contains(
+                  '$book|$chapter',
+                );
+
+                return InkWell(
+                  onTap: () =>
+                      toggle(book, chapter),
+                  borderRadius:
+                      BorderRadius.circular(10),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    alignment:
+                        Alignment.center,
+                    decoration: BoxDecoration(
+                      color: done
+                          ? Colors.green.shade100
+                          : Colors.grey.shade100,
+                      borderRadius:
+                          BorderRadius.circular(
+                        10,
+                      ),
+                      border: Border.all(
+                        color: done
+                            ? Colors.green
+                            : Colors.grey.shade400,
+                      ),
+                    ),
+                    child: done
+                        ? const Icon(
+                            Icons.check,
+                            color: Colors.green,
+                          )
+                        : Text('$chapter'),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void reset() {
+    showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text(
-          'Reset reading progress?',
+          'Reset tracker?',
         ),
         content: const Text(
-          'This will uncheck every New Testament chapter.',
+          'All completed chapters will be unmarked.',
         ),
         actions: [
           TextButton(
             onPressed: () =>
-                Navigator.pop(context, false),
+                Navigator.pop(context),
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () =>
-                Navigator.pop(context, true),
+            onPressed: () {
+              setState(() {
+                completed.clear();
+              });
+
+              AppStorage.saveTracker(
+                completed,
+              );
+
+              Navigator.pop(context);
+            },
             child: const Text('Reset'),
           ),
         ],
       ),
     );
-
-    if (ok != true) return;
-
-    read.clear();
-
-    final prefs =
-        await SharedPreferences.getInstance();
-
-    await prefs.remove(storageKey);
-
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final progress =
-        total == 0 ? 0.0 : done / total;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'New Testament Reading Tracker',
-        ),
-        backgroundColor:
-            Colors.blue.shade100,
-        foregroundColor:
-            Colors.blue.shade900,
-        actions: [
-          IconButton(
-            tooltip: 'Reset progress',
-            onPressed:
-                loading ? null : _reset,
-            icon: const Icon(
-              Icons.restart_alt,
-            ),
-          ),
-        ],
-      ),
-      body: loading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : ListView(
-              padding:
-                  const EdgeInsets.all(16),
-              children: [
-                const Text(
-                  'NEW TESTAMENT BIBLE READING TRACKER',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.blue,
-                  ),
-                ),
-
-                const SizedBox(height: 6),
-
-                const Text(
-                  'Your chapter progress is saved automatically on this device/browser.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.black54,
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 10,
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  '$done of $total chapters completed '
-                  '(${(progress * 100).round()}%)',
-                  textAlign: TextAlign.center,
-                ),
-
-                if (saving)
-                  const Padding(
-                    padding:
-                        EdgeInsets.only(top: 6),
-                    child: Text(
-                      'Saving…',
-                      textAlign:
-                          TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
-                      ),
-                    ),
-                  ),
-
-                const SizedBox(height: 16),
-
-                ...books.entries.map(
-                  (entry) {
-                    final completed =
-                        read[entry.key]
-                                ?.length ??
-                            0;
-
-                    final set =
-                        read.putIfAbsent(
-                      entry.key,
-                      () => <int>{},
-                    );
-
-                    return Card(
-                      margin:
-                          const EdgeInsets.only(
-                        bottom: 8,
-                      ),
-                      child: ExpansionTile(
-                        title: Text(
-                          entry.key,
-                          style: const TextStyle(
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-                        subtitle: Text(
-                          '$completed/${entry.value} chapters completed',
-                        ),
-                        children: [
-                          Padding(
-                            padding:
-                                const EdgeInsets.fromLTRB(
-                              12,
-                              0,
-                              12,
-                              14,
-                            ),
-                            child: Wrap(
-                              spacing: 6,
-                              runSpacing: 6,
-                              children:
-                                  List.generate(
-                                entry.value,
-                                (index) {
-                                  final chapter =
-                                      index + 1;
-
-                                  return FilterChip(
-                                    label: Text(
-                                      '$chapter',
-                                    ),
-                                    selected:
-                                        set.contains(
-                                      chapter,
-                                    ),
-                                    onSelected:
-                                        (value) =>
-                                            _toggle(
-                                      entry.key,
-                                      chapter,
-                                      value,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 20),
-              ],
-            ),
-    );
   }
 }
 
 // ============================================================
-// DATE
+// BACKUP & RESTORE
 // ============================================================
 
-String fmt(DateTime d) {
-  return '${d.year.toString().padLeft(4, '0')}-'
-      '${d.month.toString().padLeft(2, '0')}-'
-      '${d.day.toString().padLeft(2, '0')}';
+class BackupPage extends StatefulWidget {
+  const BackupPage({super.key});
+
+  @override
+  State<BackupPage> createState() =>
+      _BackupPageState();
+}
+
+class _BackupPageState
+    extends State<BackupPage> {
+  void downloadBackup() {
+    final data = AppStorage.backup();
+
+    final json = const JsonEncoder
+        .withIndent('  ')
+        .convert(data);
+
+    final blob = html.Blob(
+      [json],
+      'application/json',
+    );
+
+    final url =
+        html.Url.createObjectUrlFromBlob(
+      blob,
+    );
+
+    final anchor =
+        html.AnchorElement(href: url)
+          ..setAttribute(
+            'download',
+            'bitaniya_bible_study_backup.json',
+          )
+          ..click();
+
+    html.Url.revokeObjectUrl(url);
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Backup downloaded.',
+        ),
+      ),
+    );
+  }
+
+  void restoreBackup() {
+    final input =
+        html.FileUploadInputElement();
+
+    input.accept = '.json,application/json';
+    input.click();
+
+    input.onChange.listen((event) {
+      final files = input.files;
+
+      if (files == null ||
+          files.isEmpty) {
+        return;
+      }
+
+      final reader = html.FileReader();
+
+      reader.readAsText(files.first);
+
+      reader.onLoadEnd.listen((event) {
+        try {
+          final result = reader.result;
+
+          if (result is! String) {
+            throw Exception();
+          }
+
+          final decoded =
+              jsonDecode(result);
+
+          if (decoded is! Map) {
+            throw Exception();
+          }
+
+          final success =
+              AppStorage.restore(
+            Map<String, dynamic>.from(
+              decoded,
+            ),
+          );
+
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context)
+              .showSnackBar(
+            SnackBar(
+              content: Text(
+                success
+                    ? 'Backup restored successfully. '
+                        'Return to the home page to see your data.'
+                    : 'Could not restore the backup.',
+              ),
+            ),
+          );
+        } catch (_) {
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context)
+              .showSnackBar(
+            const SnackBar(
+              content: Text(
+                'This backup file could not be read.',
+              ),
+            ),
+          );
+        }
+      });
+    });
+  }
+
+  void deleteEverything() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text(
+          'Delete everything?',
+        ),
+        content: const Text(
+          'This removes all daily studies and tracker progress '
+          'from this browser. Make a backup first if you need it.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style:
+                FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            onPressed: () {
+              html.window.localStorage
+                  .remove(
+                AppStorage.studiesKey,
+              );
+
+              html.window.localStorage
+                  .remove(
+                AppStorage.trackerKey,
+              );
+
+              Navigator.pop(context);
+
+              setState(() {});
+
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'All local data deleted.',
+                  ),
+                ),
+              );
+            },
+            child: const Text(
+              'Delete',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final studies =
+        AppStorage.studies();
+
+    final tracker =
+        AppStorage.tracker();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Backup & Restore',
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const Text(
+            'Backup & Restore',
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          const Text(
+            'Your studies are saved in this browser. '
+            'Use Backup to create a file you can keep safely '
+            'or move to another device.',
+          ),
+
+          const SizedBox(height: 20),
+
+          Card(
+            child: ListTile(
+              leading: const Icon(
+                Icons.today,
+              ),
+              title: const Text(
+                'Daily Studies',
+              ),
+              subtitle: Text(
+                '${studies.length} saved',
+              ),
+            ),
+          ),
+
+          Card(
+            child: ListTile(
+              leading: const Icon(
+                Icons.check_circle_outline,
+              ),
+              title: const Text(
+                'Tracker Progress',
+              ),
+              subtitle: Text(
+                '${tracker.length} chapters completed',
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          FilledButton.icon(
+            onPressed: downloadBackup,
+            icon: const Icon(
+              Icons.download,
+            ),
+            label: const Padding(
+              padding: EdgeInsets.all(14),
+              child: Text(
+                'DOWNLOAD BACKUP',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          OutlinedButton.icon(
+            onPressed: restoreBackup,
+            icon: const Icon(
+              Icons.upload,
+            ),
+            label: const Padding(
+              padding: EdgeInsets.all(14),
+              child: Text(
+                'RESTORE BACKUP',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 30),
+
+          const Divider(),
+
+          const SizedBox(height: 20),
+
+          OutlinedButton.icon(
+            style:
+                OutlinedButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            onPressed: deleteEverything,
+            icon: const Icon(
+              Icons.delete_forever,
+            ),
+            label: const Text(
+              'DELETE ALL LOCAL DATA',
+            ),
+          ),
+
+          const SizedBox(height: 15),
+
+          Text(
+            'Important: your data is stored locally in the browser. '
+            'Make regular backups so you do not lose your studies '
+            'if browser storage is cleared.',
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
