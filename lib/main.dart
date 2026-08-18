@@ -62,13 +62,10 @@ class _BitaniyaBibleStudyAppState
 
     return ThemeData(
       useMaterial3: true,
-      cardTheme: CardThemeData(elevation: 1.5, margin: EdgeInsets.zero),
-      navigationBarTheme: NavigationBarThemeData(elevation: 2),
-      appBarTheme: const AppBarTheme(centerTitle: false),
       colorSchemeSeed: primary,
       brightness: Brightness.light,
       scaffoldBackgroundColor: background,
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: surface,
         elevation: 1.5,
         margin: EdgeInsets.zero,
@@ -114,9 +111,6 @@ class _BitaniyaBibleStudyAppState
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        minLinearTrackHeight: 7,
-      ),
       dividerTheme: const DividerThemeData(
         space: 24,
         thickness: 0.7,
@@ -147,13 +141,10 @@ class _BitaniyaBibleStudyAppState
 
     return ThemeData(
       useMaterial3: true,
-      cardTheme: CardThemeData(elevation: 1.5, margin: EdgeInsets.zero),
-      navigationBarTheme: NavigationBarThemeData(elevation: 2),
-      appBarTheme: const AppBarTheme(centerTitle: false),
       colorSchemeSeed: const Color(0xFF8061B5),
       brightness: Brightness.dark,
       scaffoldBackgroundColor: background,
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: surface,
         elevation: 1.5,
         margin: EdgeInsets.zero,
@@ -217,9 +208,6 @@ class _BitaniyaBibleStudyAppState
           side: const BorderSide(color: Color(0xFF665A70)),
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
-      ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        minLinearTrackHeight: 7,
       ),
       dividerTheme: const DividerThemeData(
         space: 24,
