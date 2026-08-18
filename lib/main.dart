@@ -324,8 +324,7 @@ class StudyStorage {
       'bitaniya_bible_studies';
 
   static Future<List<StudyDay>> loadDays() async {
-    final prefs =
-        await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
     final raw = prefs.getString(storageKey);
 
@@ -356,8 +355,7 @@ class StudyStorage {
   static Future<void> saveDays(
     List<StudyDay> days,
   ) async {
-    final prefs =
-        await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
     final data =
         days.map((day) => day.toJson()).toList();
@@ -884,36 +882,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Expanded(
                       child: _TopProgressItem(
-                        icon: Icons.edit_note,
-                        value:
-                            '$studyChapterCount',
-                        label:
-                            'Writing Completed',
-                      ),
-                    ),
-
-                    Container(
-                      height: 36,
-                      width: 1,
-                      color: Theme.of(
-                        context,
-                      )
-                          .colorScheme
-                          .outlineVariant,
-                    ),
-
-                    Expanded(
-                      child: _TopProgressItem(
                         icon: Icons.menu_book,
                         value:
-                            '$totalReadToday',
-                        label:
-                            'Chapters',
+                            '$studyChapterCount',
+                        label: 'Chapters',
                       ),
                     ),
 
                     Container(
-                      height: 36,
+                      height: 34,
                       width: 1,
                       color: Theme.of(
                         context,
@@ -928,8 +905,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Icons.calendar_month,
                         value:
                             '$studyDays',
-                        label:
-                            'Days',
+                        label: 'Days',
                       ),
                     ),
                   ],
@@ -940,73 +916,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 // ==================================================
-                // NEW TESTAMENT ABOVE PROGRESS
-                // ==================================================
-
-                Card(
-                  clipBehavior:
-                      Clip.antiAlias,
-                  child: InkWell(
-                    onTap: () {
-                      setState(() {
-                        booksExpanded =
-                            !booksExpanded;
-                      });
-                    },
-                    child: Padding(
-                      padding:
-                          const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.auto_stories,
-                          ),
-                          const SizedBox(
-                            width: 12,
-                          ),
-                          const Expanded(
-                            child: Text(
-                              'New Testament',
-                              style:
-                                  TextStyle(
-                                fontSize: 18,
-                                fontWeight:
-                                    FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Icon(
-                            booksExpanded
-                                ? Icons
-                                    .keyboard_arrow_up
-                                : Icons
-                                    .keyboard_arrow_down,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                if (booksExpanded) ...[
-                  const SizedBox(
-                    height: 8,
-                  ),
-
-                  ...newTestamentBooks.map(
-                    _buildBookCard,
-                  ),
-                ],
-
-                const SizedBox(
-                  height: 14,
-                ),
-
-                // ==================================================
-                // READING PROGRESS
+                // NEW TESTAMENT READING PROGRESS
                 // ==================================================
 
                 Card(
@@ -1016,6 +926,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       16,
                     ),
                     child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment
+                              .start,
                       children: [
                         Row(
                           children: [
@@ -1025,12 +938,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(
                               width: 10,
                             ),
-                            Expanded(
+                            const Expanded(
                               child: Text(
-                                '${(todayPercentage * 100).toStringAsFixed(1)}%',
+                                'New Testament',
                                 style:
-                                    const TextStyle(
-                                  fontSize: 20,
+                                    TextStyle(
+                                  fontSize: 18,
                                   fontWeight:
                                       FontWeight.bold,
                                 ),
@@ -1054,6 +967,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           height: 8,
                         ),
 
+                        // ONLY "Completed" NEXT
+                        // TO THE PERCENTAGE.
+                        Text(
+                          '${(todayPercentage * 100).toStringAsFixed(1)}% Completed',
+                          style:
+                              const TextStyle(
+                            fontSize: 20,
+                            fontWeight:
+                                FontWeight.bold,
+                          ),
+                        ),
+
+                        const SizedBox(
+                          height: 8,
+                        ),
+
                         LinearProgressIndicator(
                           value:
                               todayPercentage,
@@ -1064,6 +993,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           height: 8,
                         ),
 
+                        // EXISTING DATE + COUNT.
                         Row(
                           children: [
                             Expanded(
@@ -1098,6 +1028,73 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 const SizedBox(
+                  height: 18,
+                ),
+
+                // ==================================================
+                // COLLAPSIBLE NEW TESTAMENT BOOKS
+                // ==================================================
+
+                Card(
+                  clipBehavior:
+                      Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            booksExpanded =
+                                !booksExpanded;
+                          });
+                        },
+                        child: Padding(
+                          padding:
+                              const EdgeInsets
+                                  .symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.menu_book,
+                              ),
+                              const SizedBox(
+                                width: 12,
+                              ),
+                              const Expanded(
+                                child: Text(
+                                  'New Testament',
+                                  style:
+                                      TextStyle(
+                                    fontSize: 18,
+                                    fontWeight:
+                                        FontWeight
+                                            .bold,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                booksExpanded
+                                    ? Icons
+                                        .keyboard_arrow_up
+                                    : Icons
+                                        .keyboard_arrow_down,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      if (booksExpanded)
+                        ...newTestamentBooks.map(
+                          _buildBookCard,
+                        ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(
                   height: 22,
                 ),
 
@@ -1120,8 +1117,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 if (sorted.isEmpty)
                   const _EmptyCard(
-                    icon: Icons
-                        .menu_book_outlined,
+                    icon:
+                        Icons.menu_book_outlined,
                     title:
                         'No studies yet',
                     message:
@@ -1242,16 +1239,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding:
           const EdgeInsets.fromLTRB(
+        10,
         0,
-        0,
-        0,
+        10,
         8,
       ),
       child: Card(
-        clipBehavior:
-            Clip.antiAlias,
         child: ExpansionTile(
-          // ALWAYS CLOSED WHEN FIRST SHOWN.
           initiallyExpanded: false,
 
           leading: CircleAvatar(
@@ -1278,9 +1272,6 @@ class _HomeScreenState extends State<HomeScreen> {
           subtitle: Text(
             '$read / ${book.chapters}',
           ),
-
-          // Flutter 3.47 compatible.
-          // Do not use contentPadding here.
 
           childrenPadding:
               const EdgeInsets.fromLTRB(
@@ -1482,7 +1473,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ============================================================
-// HOME TOP PROGRESS ITEM
+// TOP PROGRESS ITEM
 // ============================================================
 
 class _TopProgressItem
@@ -1500,8 +1491,8 @@ class _TopProgressItem
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize:
-          MainAxisSize.min,
+      mainAxisAlignment:
+          MainAxisAlignment.center,
       children: [
         Row(
           mainAxisAlignment:
@@ -1509,16 +1500,16 @@ class _TopProgressItem
           children: [
             Icon(
               icon,
-              size: 22,
+              size: 25,
             ),
             const SizedBox(
-              width: 6,
+              width: 8,
             ),
             Text(
               value,
               style:
                   const TextStyle(
-                fontSize: 22,
+                fontSize: 23,
                 fontWeight:
                     FontWeight.bold,
               ),
@@ -1526,21 +1517,14 @@ class _TopProgressItem
           ],
         ),
         const SizedBox(
-          height: 3,
+          height: 2,
         ),
         Text(
           label,
-          textAlign:
-              TextAlign.center,
-          maxLines: 1,
-          overflow:
-              TextOverflow.ellipsis,
           style:
               TextStyle(
-            fontSize: 11,
-            color: Theme.of(
-              context,
-            )
+            fontSize: 13,
+            color: Theme.of(context)
                 .colorScheme
                 .onSurfaceVariant,
           ),
@@ -1674,6 +1658,7 @@ class SettingsScreen
 class DailyStudyScreen
     extends StatefulWidget {
   final List<StudyDay> days;
+
   final void Function(
     StudyDay day,
   ) onSaveDay;
@@ -2057,11 +2042,9 @@ class _DailyStudyScreenState
                   Icons.calendar_today,
                 ),
               ),
-
               const SizedBox(
                 width: 14,
               ),
-
               Expanded(
                 child: Text(
                   '${selectedDate.day}/'
@@ -2075,7 +2058,6 @@ class _DailyStudyScreenState
                   ),
                 ),
               ),
-
               const Icon(
                 Icons.chevron_right,
               ),
@@ -2309,43 +2291,30 @@ class _ChapterCardState
     extends State<ChapterCard> {
   late final TextEditingController
       referenceController;
-
   late final TextEditingController
       keyVerseController;
-
   late final TextEditingController
       summaryController;
-
   late final TextEditingController
       observationsController;
-
   late final TextEditingController
       meaningController;
-
   late final TextEditingController
       lessonsController;
-
   late final TextEditingController
       applicationController;
-
   late final TextEditingController
       questionsController;
-
   late final TextEditingController
       prayerController;
-
   late final TextEditingController
       characterNameController;
-
   late final TextEditingController
       characterWhoController;
-
   late final TextEditingController
       characterTraitsController;
-
   late final TextEditingController
       characterActionsController;
-
   late final TextEditingController
       characterLessonsController;
 
@@ -2435,7 +2404,6 @@ class _ChapterCardState
     applicationController.dispose();
     questionsController.dispose();
     prayerController.dispose();
-
     characterNameController.dispose();
     characterWhoController.dispose();
     characterTraitsController.dispose();
@@ -2448,43 +2416,30 @@ class _ChapterCardState
   void sync() {
     widget.chapter.reference =
         referenceController.text;
-
     widget.chapter.keyVerse =
         keyVerseController.text;
-
     widget.chapter.summary =
         summaryController.text;
-
     widget.chapter.observations =
         observationsController.text;
-
     widget.chapter.meaning =
         meaningController.text;
-
     widget.chapter.lessons =
         lessonsController.text;
-
     widget.chapter.application =
         applicationController.text;
-
     widget.chapter.questions =
         questionsController.text;
-
     widget.chapter.prayer =
         prayerController.text;
-
     widget.chapter.characterName =
         characterNameController.text;
-
     widget.chapter.characterWho =
         characterWhoController.text;
-
     widget.chapter.characterTraits =
         characterTraitsController.text;
-
     widget.chapter.characterActions =
         characterActionsController.text;
-
     widget.chapter.characterLessons =
         characterLessonsController.text;
 
@@ -2537,7 +2492,6 @@ class _ChapterCardState
           Clip.antiAlias,
       child:
           ExpansionTile(
-        // CLOSED BY DEFAULT.
         initiallyExpanded:
             false,
 
