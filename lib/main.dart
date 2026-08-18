@@ -372,8 +372,7 @@ class StudyStorage {
     final backup = {
       'app': 'Bitaniya Bible Study',
       'version': 1,
-      'createdAt':
-          DateTime.now().toIso8601String(),
+      'createdAt': DateTime.now().toIso8601String(),
       'studies':
           days.map((day) => day.toJson()).toList(),
     };
@@ -691,6 +690,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool loadingReading = true;
 
+  // The New Testament section itself is closed by default.
   bool booksExpanded = false;
 
   @override
@@ -875,8 +875,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 SliverChildListDelegate(
               [
                 // ==================================================
-                // TOP PROGRESS ROW
+                // TOP ROW
                 // ==================================================
+                //
+                // Only chapter count + study days.
+                // No New Testament heading here.
+                // No Writing Completed tracker.
+                //
 
                 Row(
                   children: [
@@ -885,7 +890,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: Icons.menu_book,
                         value:
                             '$studyChapterCount',
-                        label: 'Chapters',
                       ),
                     ),
 
@@ -905,7 +909,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             Icons.calendar_month,
                         value:
                             '$studyDays',
-                        label: 'Days',
                       ),
                     ),
                   ],
@@ -916,124 +919,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 // ==================================================
-                // NEW TESTAMENT READING PROGRESS
+                // NEW TESTAMENT BOOKS
                 // ==================================================
-
-                Card(
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.all(
-                      16,
-                    ),
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment
-                              .start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.auto_stories,
-                            ),
-                            const SizedBox(
-                              width: 10,
-                            ),
-                            const Expanded(
-                              child: Text(
-                                'New Testament',
-                                style:
-                                    TextStyle(
-                                  fontSize: 18,
-                                  fontWeight:
-                                      FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              tooltip:
-                                  'Choose date',
-                              onPressed:
-                                  pickReadingDate,
-                              icon:
-                                  const Icon(
-                                Icons
-                                    .calendar_month,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(
-                          height: 8,
-                        ),
-
-                        // ONLY "Completed" NEXT
-                        // TO THE PERCENTAGE.
-                        Text(
-                          '${(todayPercentage * 100).toStringAsFixed(1)}% Completed',
-                          style:
-                              const TextStyle(
-                            fontSize: 20,
-                            fontWeight:
-                                FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(
-                          height: 8,
-                        ),
-
-                        LinearProgressIndicator(
-                          value:
-                              todayPercentage,
-                          minHeight: 7,
-                        ),
-
-                        const SizedBox(
-                          height: 8,
-                        ),
-
-                        // EXISTING DATE + COUNT.
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '${selectedDate.day}/'
-                                '${selectedDate.month}/'
-                                '${selectedDate.year}',
-                                style:
-                                    TextStyle(
-                                  color: Theme.of(
-                                    context,
-                                  )
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              '$totalReadToday / '
-                              '$totalNewTestamentChapters',
-                              style:
-                                  const TextStyle(
-                                fontWeight:
-                                    FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(
-                  height: 18,
-                ),
-
-                // ==================================================
-                // COLLAPSIBLE NEW TESTAMENT BOOKS
-                // ==================================================
+                //
+                // This is BEFORE the progress section.
+                // Only ONE New Testament heading.
+                //
 
                 Card(
                   clipBehavior:
@@ -1086,11 +977,114 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
 
+                      // Books are hidden until the
+                      // New Testament section is opened.
                       if (booksExpanded)
                         ...newTestamentBooks.map(
                           _buildBookCard,
                         ),
                     ],
+                  ),
+                ),
+
+                const SizedBox(
+                  height: 18,
+                ),
+
+                // ==================================================
+                // READING PROGRESS
+                // ==================================================
+                //
+                // "Completed" is next to the percentage.
+                // No separate Writing Completed bar.
+                //
+
+                Card(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.all(
+                      16,
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.auto_stories,
+                            ),
+                            const SizedBox(
+                              width: 10,
+                            ),
+                            Expanded(
+                              child: Text(
+                                '${(todayPercentage * 100).toStringAsFixed(1)}% Completed',
+                                style:
+                                    const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight:
+                                      FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              tooltip:
+                                  'Choose date',
+                              onPressed:
+                                  pickReadingDate,
+                              icon:
+                                  const Icon(
+                                Icons
+                                    .calendar_month,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(
+                          height: 8,
+                        ),
+
+                        LinearProgressIndicator(
+                          value:
+                              todayPercentage,
+                          minHeight: 7,
+                        ),
+
+                        const SizedBox(
+                          height: 8,
+                        ),
+
+                        // KEEP 0 / 260 HERE.
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${selectedDate.day}/'
+                                '${selectedDate.month}/'
+                                '${selectedDate.year}',
+                                style:
+                                    TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  )
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '$totalReadToday / '
+                              '$totalNewTestamentChapters',
+                              style:
+                                  const TextStyle(
+                                fontWeight:
+                                    FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -1117,8 +1111,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 if (sorted.isEmpty)
                   const _EmptyCard(
-                    icon:
-                        Icons.menu_book_outlined,
+                    icon: Icons
+                        .menu_book_outlined,
                     title:
                         'No studies yet',
                     message:
@@ -1473,60 +1467,39 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ============================================================
-// TOP PROGRESS ITEM
+// SIMPLE HOME TOP PROGRESS ITEM
 // ============================================================
 
 class _TopProgressItem
     extends StatelessWidget {
   final IconData icon;
   final String value;
-  final String label;
 
   const _TopProgressItem({
     required this.icon,
     required this.value,
-    required this.label,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
       mainAxisAlignment:
           MainAxisAlignment.center,
       children: [
-        Row(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 25,
-            ),
-            const SizedBox(
-              width: 8,
-            ),
-            Text(
-              value,
-              style:
-                  const TextStyle(
-                fontSize: 23,
-                fontWeight:
-                    FontWeight.bold,
-              ),
-            ),
-          ],
+        Icon(
+          icon,
+          size: 25,
         ),
         const SizedBox(
-          height: 2,
+          width: 8,
         ),
         Text(
-          label,
+          value,
           style:
-              TextStyle(
-            fontSize: 13,
-            color: Theme.of(context)
-                .colorScheme
-                .onSurfaceVariant,
+              const TextStyle(
+            fontSize: 23,
+            fontWeight:
+                FontWeight.bold,
           ),
         ),
       ],
@@ -1658,7 +1631,6 @@ class SettingsScreen
 class DailyStudyScreen
     extends StatefulWidget {
   final List<StudyDay> days;
-
   final void Function(
     StudyDay day,
   ) onSaveDay;
@@ -2042,9 +2014,11 @@ class _DailyStudyScreenState
                   Icons.calendar_today,
                 ),
               ),
+
               const SizedBox(
                 width: 14,
               ),
+
               Expanded(
                 child: Text(
                   '${selectedDate.day}/'
@@ -2058,6 +2032,7 @@ class _DailyStudyScreenState
                   ),
                 ),
               ),
+
               const Icon(
                 Icons.chevron_right,
               ),
@@ -2291,30 +2266,43 @@ class _ChapterCardState
     extends State<ChapterCard> {
   late final TextEditingController
       referenceController;
+
   late final TextEditingController
       keyVerseController;
+
   late final TextEditingController
       summaryController;
+
   late final TextEditingController
       observationsController;
+
   late final TextEditingController
       meaningController;
+
   late final TextEditingController
       lessonsController;
+
   late final TextEditingController
       applicationController;
+
   late final TextEditingController
       questionsController;
+
   late final TextEditingController
       prayerController;
+
   late final TextEditingController
       characterNameController;
+
   late final TextEditingController
       characterWhoController;
+
   late final TextEditingController
       characterTraitsController;
+
   late final TextEditingController
       characterActionsController;
+
   late final TextEditingController
       characterLessonsController;
 
@@ -2404,6 +2392,7 @@ class _ChapterCardState
     applicationController.dispose();
     questionsController.dispose();
     prayerController.dispose();
+
     characterNameController.dispose();
     characterWhoController.dispose();
     characterTraitsController.dispose();
@@ -2416,30 +2405,43 @@ class _ChapterCardState
   void sync() {
     widget.chapter.reference =
         referenceController.text;
+
     widget.chapter.keyVerse =
         keyVerseController.text;
+
     widget.chapter.summary =
         summaryController.text;
+
     widget.chapter.observations =
         observationsController.text;
+
     widget.chapter.meaning =
         meaningController.text;
+
     widget.chapter.lessons =
         lessonsController.text;
+
     widget.chapter.application =
         applicationController.text;
+
     widget.chapter.questions =
         questionsController.text;
+
     widget.chapter.prayer =
         prayerController.text;
+
     widget.chapter.characterName =
         characterNameController.text;
+
     widget.chapter.characterWho =
         characterWhoController.text;
+
     widget.chapter.characterTraits =
         characterTraitsController.text;
+
     widget.chapter.characterActions =
         characterActionsController.text;
+
     widget.chapter.characterLessons =
         characterLessonsController.text;
 
@@ -2492,6 +2494,7 @@ class _ChapterCardState
           Clip.antiAlias,
       child:
           ExpansionTile(
+        // Chapters are CLOSED by default.
         initiallyExpanded:
             false,
 
