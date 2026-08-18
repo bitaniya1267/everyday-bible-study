@@ -621,7 +621,6 @@ class _AppShellState extends State<AppShell> {
       body: SafeArea(
         child: pages[currentIndex],
       ),
-
       bottomNavigationBar:
           NavigationBar(
         selectedIndex: currentIndex,
@@ -640,7 +639,6 @@ class _AppShellState extends State<AppShell> {
             ),
             label: 'Home',
           ),
-
           NavigationDestination(
             icon: Icon(
               Icons.menu_book_outlined,
@@ -650,7 +648,6 @@ class _AppShellState extends State<AppShell> {
             ),
             label: 'Study',
           ),
-
           NavigationDestination(
             icon: Icon(
               Icons.backup_outlined,
@@ -842,11 +839,6 @@ class _HomeScreenState extends State<HomeScreen> {
             IconButton(
               tooltip: 'New study',
               onPressed: () {
-                setState(() {
-                  // Navigation is handled
-                  // by the bottom navigation.
-                });
-
                 ScaffoldMessenger.of(
                   context,
                 ).showSnackBar(
@@ -892,14 +884,36 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Expanded(
                       child: _TopProgressItem(
-                        icon: Icons.menu_book,
+                        icon: Icons.edit_note,
                         value:
-                            '$totalReadToday',
+                            '$studyChapterCount',
+                        label:
+                            'Writing Completed',
                       ),
                     ),
 
                     Container(
-                      height: 34,
+                      height: 36,
+                      width: 1,
+                      color: Theme.of(
+                        context,
+                      )
+                          .colorScheme
+                          .outlineVariant,
+                    ),
+
+                    Expanded(
+                      child: _TopProgressItem(
+                        icon: Icons.menu_book,
+                        value:
+                            '$totalReadToday',
+                        label:
+                            'Chapters',
+                      ),
+                    ),
+
+                    Container(
+                      height: 36,
                       width: 1,
                       color: Theme.of(
                         context,
@@ -914,6 +928,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             Icons.calendar_month,
                         value:
                             '$studyDays',
+                        label:
+                            'Days',
                       ),
                     ),
                   ],
@@ -921,6 +937,72 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(
                   height: 18,
+                ),
+
+                // ==================================================
+                // NEW TESTAMENT ABOVE PROGRESS
+                // ==================================================
+
+                Card(
+                  clipBehavior:
+                      Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        booksExpanded =
+                            !booksExpanded;
+                      });
+                    },
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.auto_stories,
+                          ),
+                          const SizedBox(
+                            width: 12,
+                          ),
+                          const Expanded(
+                            child: Text(
+                              'New Testament',
+                              style:
+                                  TextStyle(
+                                fontSize: 18,
+                                fontWeight:
+                                    FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            booksExpanded
+                                ? Icons
+                                    .keyboard_arrow_up
+                                : Icons
+                                    .keyboard_arrow_down,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                if (booksExpanded) ...[
+                  const SizedBox(
+                    height: 8,
+                  ),
+
+                  ...newTestamentBooks.map(
+                    _buildBookCard,
+                  ),
+                ],
+
+                const SizedBox(
+                  height: 14,
                 ),
 
                 // ==================================================
@@ -1012,74 +1094,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ],
                     ),
-                  ),
-                ),
-
-                const SizedBox(
-                  height: 18,
-                ),
-
-                // ==================================================
-                // BIBLE BOOKS COLLAPSIBLE SECTION
-                // ==================================================
-
-                Card(
-                  clipBehavior:
-                      Clip.antiAlias,
-                  child: Column(
-                    children: [
-                      InkWell(
-                        onTap: () {
-                          setState(() {
-                            booksExpanded =
-                                !booksExpanded;
-                          });
-                        },
-                        child: Padding(
-                          padding:
-                              const EdgeInsets
-                                  .symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.menu_book,
-                              ),
-                              const SizedBox(
-                                width: 12,
-                              ),
-                              const Expanded(
-                                child: Text(
-                                  'New Testament',
-                                  style:
-                                      TextStyle(
-                                    fontSize: 18,
-                                    fontWeight:
-                                        FontWeight
-                                            .bold,
-                                  ),
-                                ),
-                              ),
-                              Icon(
-                                booksExpanded
-                                    ? Icons
-                                        .keyboard_arrow_up
-                                    : Icons
-                                        .keyboard_arrow_down,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      if (booksExpanded)
-                        ...newTestamentBooks
-                            .map(
-                              _buildBookCard,
-                            ),
-                    ],
                   ),
                 ),
 
@@ -1228,13 +1242,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding:
           const EdgeInsets.fromLTRB(
-        10,
         0,
-        10,
+        0,
+        0,
         8,
       ),
       child: Card(
+        clipBehavior:
+            Clip.antiAlias,
         child: ExpansionTile(
+          // ALWAYS CLOSED WHEN FIRST SHOWN.
           initiallyExpanded: false,
 
           leading: CircleAvatar(
@@ -1261,6 +1278,9 @@ class _HomeScreenState extends State<HomeScreen> {
           subtitle: Text(
             '$read / ${book.chapters}',
           ),
+
+          // Flutter 3.47 compatible.
+          // Do not use contentPadding here.
 
           childrenPadding:
               const EdgeInsets.fromLTRB(
@@ -1462,39 +1482,67 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 // ============================================================
-// SIMPLE HOME TOP PROGRESS ITEM
+// HOME TOP PROGRESS ITEM
 // ============================================================
 
 class _TopProgressItem
     extends StatelessWidget {
   final IconData icon;
   final String value;
+  final String label;
 
   const _TopProgressItem({
     required this.icon,
     required this.value,
+    required this.label,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment:
-          MainAxisAlignment.center,
+    return Column(
+      mainAxisSize:
+          MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          size: 25,
+        Row(
+          mainAxisAlignment:
+              MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 22,
+            ),
+            const SizedBox(
+              width: 6,
+            ),
+            Text(
+              value,
+              style:
+                  const TextStyle(
+                fontSize: 22,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+          ],
         ),
         const SizedBox(
-          width: 8,
+          height: 3,
         ),
         Text(
-          value,
+          label,
+          textAlign:
+              TextAlign.center,
+          maxLines: 1,
+          overflow:
+              TextOverflow.ellipsis,
           style:
-              const TextStyle(
-            fontSize: 23,
-            fontWeight:
-                FontWeight.bold,
+              TextStyle(
+            fontSize: 11,
+            color: Theme.of(
+              context,
+            )
+                .colorScheme
+                .onSurfaceVariant,
           ),
         ),
       ],
@@ -1697,7 +1745,6 @@ class _DailyStudyScreenState
         existing.first,
       );
     } else {
-      // NEW STUDY STARTS EMPTY.
       currentDay = StudyDay(
         dateKey: key,
         chapters: [],
@@ -1733,7 +1780,6 @@ class _DailyStudyScreenState
   }
 
   Future<void> _pickDate() async {
-    // Save before changing date.
     _autoSave();
 
     final picked =
@@ -1801,13 +1847,10 @@ class _DailyStudyScreenState
     }
 
     return WillPopScope(
-      // SAVE AUTOMATICALLY WHEN
-      // USER LEAVES THE PAGE.
       onWillPop: () async {
         _autoSave();
         return true;
       },
-
       child:
           CustomScrollView(
         slivers: [
@@ -1848,9 +1891,6 @@ class _DailyStudyScreenState
                   const SizedBox(
                     height: 16,
                   ),
-
-                  // NO CHAPTER COUNT.
-                  // NO 3 CHAPTER EXPLANATION.
 
                   if (day.chapters.isEmpty)
                     Card(
@@ -2160,7 +2200,6 @@ class _DailyStudyEditorBodyState
   ) {
     return WillPopScope(
       onWillPop: () async {
-        // AUTO-SAVE BEFORE LEAVING.
         save();
         return true;
       },
@@ -2193,8 +2232,6 @@ class _DailyStudyEditorBodyState
                   canDelete:
                       true,
                   onChanged: () {
-                    // AUTO-SAVE EVERY TIME
-                    // SOMETHING IS TYPED.
                     save();
                   },
                   onDelete: () {
@@ -2451,7 +2488,6 @@ class _ChapterCardState
     widget.chapter.characterLessons =
         characterLessonsController.text;
 
-    // AUTO-SAVE CALLBACK.
     widget.onChanged();
   }
 
@@ -2521,10 +2557,6 @@ class _ChapterCardState
             fontSize: 18,
           ),
         ),
-
-        // IMPORTANT:
-        // No subtitle.
-        // This removes "Enter chapter reference".
 
         childrenPadding:
             const EdgeInsets
@@ -2620,7 +2652,6 @@ class _ChapterCardState
           ),
 
           ExpansionTile(
-            // CHARACTER STUDY CLOSED.
             initiallyExpanded:
                 false,
 
