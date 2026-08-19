@@ -479,96 +479,6 @@ class BibleBook {
   );
 }
 
-// ============================================================
-// REFERENCE-AWARE STUDY QUESTIONS
-// ============================================================
-
-class GuidedQuestion {
-  final String category;
-  final String question;
-
-  const GuidedQuestion(this.category, this.question);
-}
-
-String _normalizeReference(String value) {
-  return value.trim().replaceAll(RegExp(r'\s+'), ' ');
-}
-
-List<GuidedQuestion> guidedQuestionsForReference(String reference) {
-  final ref = _normalizeReference(reference);
-  if (ref.isEmpty) return const [];
-
-  final match = RegExp(r'^(.+?)\s+(\d+)(?::\d+(?:-\d+)?)?$', caseSensitive: false)
-      .firstMatch(ref);
-
-  if (match == null) {
-    return [
-      GuidedQuestion('OBSERVE', 'What stands out to you in $ref?'),
-      GuidedQuestion('UNDERSTAND', 'What is happening in $ref, and what seems to be the main message?'),
-      GuidedQuestion('GOD', 'What does $ref reveal about God, Jesus, His character, or His work?'),
-      GuidedQuestion('RESPOND', 'What should you believe, change, obey, practice, or remember because of $ref?'),
-      GuidedQuestion('PRAY', 'What would you like to pray about after studying $ref?'),
-    ];
-  }
-
-  final book = match.group(1)!.trim();
-  final chapter = match.group(2)!;
-  final normalizedBook = book.toLowerCase();
-  final chapterRef = '$book $chapter';
-
-  // A small set of highly specific questions for well-known chapters.
-  // The fallback below still works for every other reference entered by the user.
-  final specific = <String, List<GuidedQuestion>>{
-    'matthew 1': const [
-      GuidedQuestion('OBSERVE', 'What stands out to you about the genealogy and the events surrounding Jesus\' birth?'),
-      GuidedQuestion('JESUS', 'What does Matthew 1 reveal about Jesus\' identity and His place in God\'s promises?'),
-      GuidedQuestion('JOSEPH', 'What do Joseph\'s choices teach you about obedience, righteousness, and trust in God?'),
-      GuidedQuestion('PROMISE', 'Which Old Testament promise or prophecy is connected to this chapter, and why does it matter?'),
-      GuidedQuestion('RESPOND', 'What truth from Matthew 1 should change the way you live or trust God today?'),
-    ],
-    'matthew 2': const [
-      GuidedQuestion('OBSERVE', 'What major events happen after Jesus\' birth, and how do the different people respond to Him?'),
-      GuidedQuestion('JESUS', 'What does this chapter reveal about Jesus\' identity and God\'s protection of Him?'),
-      GuidedQuestion('RESPONSE', 'How are the wise men, Herod, and the religious leaders different in their responses to Jesus?'),
-      GuidedQuestion('PROPHECY', 'What role do the Old Testament prophecies play in Matthew 2?'),
-      GuidedQuestion('RESPOND', 'What does Matthew 2 challenge you to do when God leads you in an unexpected way?'),
-    ],
-    'john 3': const [
-      GuidedQuestion('OBSERVE', 'What stands out in Jesus\' conversation with Nicodemus?'),
-      GuidedQuestion('NEW BIRTH', 'What does Jesus teach about being born again, and what does that mean for you?'),
-      GuidedQuestion('JESUS', 'What does John 3 reveal about Jesus\' identity, mission, and authority?'),
-      GuidedQuestion('FAITH', 'What does this chapter teach about believing in Jesus and receiving eternal life?'),
-      GuidedQuestion('RESPOND', 'How should John 3:16 and the surrounding teaching shape your response to God\'s love?'),
-    ],
-    'romans 8': const [
-      GuidedQuestion('OBSERVE', 'What contrasts does Paul make between life according to the flesh and life according to the Spirit?'),
-      GuidedQuestion('SPIRIT', 'What does Romans 8 teach about the Holy Spirit\'s work in the believer?'),
-      GuidedQuestion('IDENTITY', 'What does this chapter say about being God\'s child and belonging to Christ?'),
-      GuidedQuestion('SUFFERING', 'How does Romans 8 connect present suffering with future glory and hope?'),
-      GuidedQuestion('ASSURANCE', 'What gives you confidence from this chapter that nothing can separate you from God\'s love?'),
-    ],
-    'psalm 23': const [
-      GuidedQuestion('OBSERVE', 'What images does David use to describe the Lord\'s care?'),
-      GuidedQuestion('GOD', 'What does Psalm 23 reveal about the Lord as Shepherd, Provider, Guide, and Protector?'),
-      GuidedQuestion('FEAR', 'How does the psalm describe walking through dark or frightening circumstances?'),
-      GuidedQuestion('TRUST', 'What would trusting the Lord as your Shepherd look like in your life right now?'),
-      GuidedQuestion('RESPOND', 'Which phrase in Psalm 23 do you most need to remember or pray today?'),
-    ],
-  };
-
-  final exactKey = '$normalizedBook $chapter';
-  final exact = specific[exactKey];
-  if (exact != null) return exact;
-
-  return [
-    GuidedQuestion('OBSERVE', 'What stands out to you most in $chapterRef? What people, events, commands, promises, or repeated ideas do you notice?'),
-    GuidedQuestion('UNDERSTAND', 'What is happening in $chapterRef, and what do you think is the main message of this chapter?'),
-    GuidedQuestion('GOD', 'What does $chapterRef reveal about God, Jesus, His character, His will, or His work?'),
-    GuidedQuestion('PEOPLE', 'What do the people in $chapterRef say, do, believe, or struggle with, and what can you learn from them?'),
-    GuidedQuestion('RESPOND', 'What should you believe, change, obey, practice, or remember because of what you read in $chapterRef?'),
-    GuidedQuestion('PRAY', 'What is one prayer that naturally comes from your study of $chapterRef?'),
-  ];
-}
 
 const List<BibleBook> newTestamentBooks = [
   BibleBook('Matthew', 28),
@@ -2846,12 +2756,6 @@ class _ChapterCardState
             title: 'Chapter Study',
           ),
 
-          if (referenceController.text.trim().isNotEmpty) ...[
-            _GuidedQuestionsCard(
-              reference: referenceController.text,
-            ),
-            const SizedBox(height: 14),
-          ],
 
           field(
             'Key verse',
@@ -3020,80 +2924,6 @@ class _ChapterCardState
   }
 }
 
-// ============================================================
-// GUIDED QUESTIONS CARD
-// ============================================================
-
-class _GuidedQuestionsCard extends StatelessWidget {
-  final String reference;
-
-  const _GuidedQuestionsCard({required this.reference});
-
-  @override
-  Widget build(BuildContext context) {
-    final questions = guidedQuestionsForReference(reference);
-    if (questions.isEmpty) return const SizedBox.shrink();
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary.withOpacity(0.055),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.auto_awesome, size: 19,
-                  color: Theme.of(context).colorScheme.primary),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Guided questions for ${_normalizeReference(reference)}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ...questions.map(
-            (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 9),
-              child: RichText(
-                text: TextSpan(
-                  style: DefaultTextStyle.of(context).style.copyWith(
-                    fontSize: 14,
-                    height: 1.35,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: '${item.category}  ',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 11,
-                        letterSpacing: 0.6,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                    TextSpan(text: item.question),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ============================================================
 // SECTION TITLE
