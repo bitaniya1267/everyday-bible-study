@@ -19,7 +19,8 @@ class BitaniyaBibleStudyApp extends StatefulWidget {
       _BitaniyaBibleStudyAppState();
 }
 
-class _BitaniyaBibleStudyAppState extends State<BitaniyaBibleStudyApp> {
+class _BitaniyaBibleStudyAppState
+    extends State<BitaniyaBibleStudyApp> {
   ThemeMode themeMode = ThemeMode.light;
   bool loadingTheme = true;
 
@@ -106,17 +107,20 @@ class _BitaniyaBibleStudyAppState extends State<BitaniyaBibleStudyApp> {
         indicatorColor: plumSoft,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+        labelTextStyle:
+            WidgetStateProperty.resolveWith((states) {
           return TextStyle(
             color: states.contains(WidgetState.selected)
                 ? plum
                 : const Color(0xFF6E6A78),
-            fontWeight: states.contains(WidgetState.selected)
-                ? FontWeight.w700
-                : FontWeight.w500,
+            fontWeight:
+                states.contains(WidgetState.selected)
+                    ? FontWeight.w700
+                    : FontWeight.w500,
           );
         }),
-        iconTheme: WidgetStateProperty.resolveWith((states) {
+        iconTheme:
+            WidgetStateProperty.resolveWith((states) {
           return IconThemeData(
             color: states.contains(WidgetState.selected)
                 ? plum
@@ -193,7 +197,8 @@ class _BitaniyaBibleStudyAppState extends State<BitaniyaBibleStudyApp> {
           ),
         ),
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
+      progressIndicatorTheme:
+          const ProgressIndicatorThemeData(
         color: plum,
         linearTrackColor: Color(0xFFEAE5F0),
         linearMinHeight: 7,
@@ -205,23 +210,15 @@ class _BitaniyaBibleStudyAppState extends State<BitaniyaBibleStudyApp> {
         ),
         iconColor: plum,
       ),
-      expansionTileTheme: const ExpansionTileThemeData(
+      expansionTileTheme:
+          const ExpansionTileThemeData(
         iconColor: plum,
         collapsedIconColor: Color(0xFF6F6977),
         textColor: ink,
         collapsedTextColor: ink,
         backgroundColor: Colors.transparent,
-        collapsedBackgroundColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(
-            Radius.circular(18),
-          ),
-        ),
-        collapsedShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(
-            Radius.circular(18),
-          ),
-        ),
+        collapsedBackgroundColor:
+            Colors.transparent,
       ),
       iconTheme: const IconThemeData(
         color: plum,
@@ -282,7 +279,8 @@ class _BitaniyaBibleStudyAppState extends State<BitaniyaBibleStudyApp> {
         color: Color(0xFF39333F),
         thickness: 1,
       ),
-      navigationBarTheme: const NavigationBarThemeData(
+      navigationBarTheme:
+          const NavigationBarThemeData(
         backgroundColor: surface,
         indicatorColor: Color(0xFF3A3148),
         elevation: 0,
@@ -357,7 +355,8 @@ class _BitaniyaBibleStudyAppState extends State<BitaniyaBibleStudyApp> {
           ),
         ),
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
+      progressIndicatorTheme:
+          const ProgressIndicatorThemeData(
         color: plum,
         linearTrackColor: Color(0xFF3A3442),
         linearMinHeight: 7,
@@ -369,21 +368,13 @@ class _BitaniyaBibleStudyAppState extends State<BitaniyaBibleStudyApp> {
         ),
         iconColor: plum,
       ),
-      expansionTileTheme: const ExpansionTileThemeData(
+      expansionTileTheme:
+          const ExpansionTileThemeData(
         iconColor: plum,
         collapsedIconColor: Color(0xFFC5BDCF),
         backgroundColor: Colors.transparent,
-        collapsedBackgroundColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(
-            Radius.circular(18),
-          ),
-        ),
-        collapsedShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(
-            Radius.circular(18),
-          ),
-        ),
+        collapsedBackgroundColor:
+            Colors.transparent,
       ),
       iconTheme: const IconThemeData(
         color: plum,
@@ -466,12 +457,8 @@ Document documentFromStoredValue(
 
   if (plainText.isNotEmpty) {
     return Document.fromJson([
-      {
-        'insert': plainText,
-      },
-      {
-        'insert': '\n',
-      },
+      {'insert': plainText},
+      {'insert': '\n'},
     ]);
   }
 
@@ -501,7 +488,6 @@ class ChapterEntry {
   String characterActions;
   String characterLessons;
 
-  // Rich text versions of the study fields.
   String keyVerseRich;
   String summaryRich;
   String observationsRich;
@@ -565,7 +551,6 @@ class ChapterEntry {
       'characterTraits': characterTraits,
       'characterActions': characterActions,
       'characterLessons': characterLessons,
-
       'keyVerseRich': keyVerseRich,
       'summaryRich': summaryRich,
       'observationsRich': observationsRich,
@@ -574,7 +559,6 @@ class ChapterEntry {
       'applicationRich': applicationRich,
       'questionsRich': questionsRich,
       'prayerRich': prayerRich,
-
       'characterNameRich': characterNameRich,
       'characterWhoRich': characterWhoRich,
       'characterTraitsRich': characterTraitsRich,
@@ -583,37 +567,58 @@ class ChapterEntry {
     };
   }
 
-  factory ChapterEntry.fromJson(Map<String, dynamic> json) {
+  factory ChapterEntry.fromJson(
+    Map<String, dynamic> json,
+  ) {
     return ChapterEntry(
       id: json['id']?.toString() ??
-          DateTime.now().microsecondsSinceEpoch.toString(),
-      reference: json['reference']?.toString() ?? '',
-      keyVerse: json['keyVerse']?.toString() ?? '',
-      summary: json['summary']?.toString() ?? '',
-      observations: json['observations']?.toString() ?? '',
-      meaning: json['meaning']?.toString() ?? '',
-      lessons: json['lessons']?.toString() ?? '',
-      application: json['application']?.toString() ?? '',
-      questions: json['questions']?.toString() ?? '',
-      prayer: json['prayer']?.toString() ?? '',
-      characterName: json['characterName']?.toString() ?? '',
-      characterWho: json['characterWho']?.toString() ?? '',
-      characterTraits: json['characterTraits']?.toString() ?? '',
-      characterActions: json['characterActions']?.toString() ?? '',
-      characterLessons: json['characterLessons']?.toString() ?? '',
-
-      keyVerseRich: json['keyVerseRich']?.toString() ?? '',
-      summaryRich: json['summaryRich']?.toString() ?? '',
+          DateTime.now()
+              .microsecondsSinceEpoch
+              .toString(),
+      reference:
+          json['reference']?.toString() ?? '',
+      keyVerse:
+          json['keyVerse']?.toString() ?? '',
+      summary:
+          json['summary']?.toString() ?? '',
+      observations:
+          json['observations']?.toString() ?? '',
+      meaning:
+          json['meaning']?.toString() ?? '',
+      lessons:
+          json['lessons']?.toString() ?? '',
+      application:
+          json['application']?.toString() ?? '',
+      questions:
+          json['questions']?.toString() ?? '',
+      prayer:
+          json['prayer']?.toString() ?? '',
+      characterName:
+          json['characterName']?.toString() ?? '',
+      characterWho:
+          json['characterWho']?.toString() ?? '',
+      characterTraits:
+          json['characterTraits']?.toString() ?? '',
+      characterActions:
+          json['characterActions']?.toString() ?? '',
+      characterLessons:
+          json['characterLessons']?.toString() ?? '',
+      keyVerseRich:
+          json['keyVerseRich']?.toString() ?? '',
+      summaryRich:
+          json['summaryRich']?.toString() ?? '',
       observationsRich:
           json['observationsRich']?.toString() ?? '',
-      meaningRich: json['meaningRich']?.toString() ?? '',
-      lessonsRich: json['lessonsRich']?.toString() ?? '',
+      meaningRich:
+          json['meaningRich']?.toString() ?? '',
+      lessonsRich:
+          json['lessonsRich']?.toString() ?? '',
       applicationRich:
           json['applicationRich']?.toString() ?? '',
       questionsRich:
           json['questionsRich']?.toString() ?? '',
-      prayerRich: json['prayerRich']?.toString() ?? '',
-
+      prayerRich:
+          json['prayerRich']?.toString() ?? '',
       characterNameRich:
           json['characterNameRich']?.toString() ?? '',
       characterWhoRich:
@@ -640,11 +645,14 @@ class StudyDay {
   Map<String, dynamic> toJson() {
     return {
       'dateKey': dateKey,
-      'chapters': chapters.map((c) => c.toJson()).toList(),
+      'chapters':
+          chapters.map((c) => c.toJson()).toList(),
     };
   }
 
-  factory StudyDay.fromJson(Map<String, dynamic> json) {
+  factory StudyDay.fromJson(
+    Map<String, dynamic> json,
+  ) {
     final rawChapters = json['chapters'];
     final chapters = <ChapterEntry>[];
 
@@ -661,7 +669,8 @@ class StudyDay {
     }
 
     return StudyDay(
-      dateKey: json['dateKey']?.toString() ?? '',
+      dateKey:
+          json['dateKey']?.toString() ?? '',
       chapters: chapters,
     );
   }
@@ -727,7 +736,8 @@ class StudyStorage {
       'bitaniya_bible_studies';
 
   static Future<List<StudyDay>> loadDays() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs =
+        await SharedPreferences.getInstance();
 
     final raw = prefs.getString(storageKey);
 
@@ -758,7 +768,8 @@ class StudyStorage {
   static Future<void> saveDays(
     List<StudyDay> days,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs =
+        await SharedPreferences.getInstance();
 
     final data =
         days.map((day) => day.toJson()).toList();
@@ -775,7 +786,8 @@ class StudyStorage {
     final backup = {
       'app': 'Bitaniya Bible Study',
       'version': 2,
-      'createdAt': DateTime.now().toIso8601String(),
+      'createdAt':
+          DateTime.now().toIso8601String(),
       'studies':
           days.map((day) => day.toJson()).toList(),
     };
@@ -902,7 +914,8 @@ class ReadingStorage {
 
 class AppShell extends StatefulWidget {
   final bool isDarkMode;
-  final Future<void> Function(bool) onThemeChanged;
+  final Future<void> Function(bool)
+      onThemeChanged;
 
   const AppShell({
     super.key,
@@ -915,7 +928,8 @@ class AppShell extends StatefulWidget {
       _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState
+    extends State<AppShell> {
   int currentIndex = 0;
 
   List<StudyDay> days = [];
@@ -1068,7 +1082,8 @@ class _AppShellState extends State<AppShell> {
 class HomeScreen extends StatefulWidget {
   final List<StudyDay> days;
   final void Function(StudyDay day) onOpenDay;
-  final void Function(String dateKey) onDeleteDay;
+  final void Function(String dateKey)
+      onDeleteDay;
   final VoidCallback onOpenSettings;
 
   const HomeScreen({
@@ -1084,7 +1099,8 @@ class HomeScreen extends StatefulWidget {
       _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState
+    extends State<HomeScreen> {
   DateTime selectedDate = DateTime.now();
 
   Map<String, Set<String>> progress = {};
@@ -1117,14 +1133,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Set<String> get todayRead {
-    return progress[currentDateKey] ??
-        <String>{};
-  }
+  Set<String> get todayRead =>
+      progress[currentDateKey] ??
+      <String>{};
 
-  int get totalReadToday {
-    return todayRead.length;
-  }
+  int get totalReadToday =>
+      todayRead.length;
 
   int bookReadCount(BibleBook book) {
     return todayRead
@@ -1201,23 +1215,19 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  int get studyDays {
-    return widget.days.length;
-  }
+  int get studyDays =>
+      widget.days.length;
 
-  int get studyChapterCount {
-    return widget.days.fold<int>(
-      0,
-      (sum, day) =>
-          sum + day.chapters.length,
-    );
-  }
+  int get studyChapterCount =>
+      widget.days.fold<int>(
+        0,
+        (sum, day) =>
+            sum + day.chapters.length,
+      );
 
   @override
   Widget build(BuildContext context) {
-    final sorted = [
-      ...widget.days
-    ];
+    final sorted = [...widget.days];
 
     sorted.sort(
       (a, b) =>
@@ -1382,7 +1392,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             Expanded(
                               child: Text(
-                                '${(todayPercentage * 100).toStringAsFixed(1)}% Completed',
+                                '${(todayPercentage * 100).toStringAsFixed(1)}%',
                                 style:
                                     const TextStyle(
                                   fontSize: 20,
@@ -1427,6 +1437,23 @@ class _HomeScreenState extends State<HomeScreen> {
                                       FontWeight.bold,
                                 ),
                               ),
+                            ),
+                            Text(
+                              'Completed',
+                              style:
+                                  TextStyle(
+                                fontSize: 13,
+                                fontWeight:
+                                    FontWeight.w600,
+                                color: Theme.of(
+                                  context,
+                                )
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 10,
                             ),
                             Text(
                               '${selectedDate.day}/'
@@ -1976,6 +2003,7 @@ class SettingsScreen
 class DailyStudyScreen
     extends StatefulWidget {
   final List<StudyDay> days;
+
   final void Function(
     StudyDay day,
   ) onSaveDay;
@@ -2047,9 +2075,26 @@ class _DailyStudyScreenState
         existing.first,
       );
     } else {
+      final stamp =
+          DateTime.now()
+              .microsecondsSinceEpoch;
+
       currentDay = StudyDay(
         dateKey: key,
-        chapters: [],
+        chapters: [
+          ChapterEntry(
+            id: '$stamp-1',
+            reference: '',
+          ),
+          ChapterEntry(
+            id: '$stamp-2',
+            reference: '',
+          ),
+          ChapterEntry(
+            id: '$stamp-3',
+            reference: '',
+          ),
+        ],
       );
     }
   }
@@ -2191,54 +2236,6 @@ class _DailyStudyScreenState
                   const SizedBox(
                     height: 16,
                   ),
-                  if (day.chapters.isEmpty)
-                    Card(
-                      child:
-                          Padding(
-                        padding:
-                            const EdgeInsets.all(
-                          22,
-                        ),
-                        child:
-                            Column(
-                          children: [
-                            Icon(
-                              Icons
-                                  .menu_book_outlined,
-                              size: 42,
-                              color: Theme.of(
-                                context,
-                              )
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            const Text(
-                              'No chapters yet',
-                              style:
-                                  TextStyle(
-                                fontSize:
-                                    18,
-                                fontWeight:
-                                    FontWeight
-                                        .bold,
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 6,
-                            ),
-                            const Text(
-                              'Add a chapter when you are ready.',
-                              textAlign:
-                                  TextAlign
-                                      .center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                   ...List.generate(
                     day.chapters.length,
                     (index) {
@@ -2522,9 +2519,7 @@ class _DailyStudyEditorBodyState
                       chapter,
                   canDelete:
                       true,
-                  onChanged: () {
-                    save();
-                  },
+                  onChanged: save,
                   onDelete: () {
                     deleteChapter(
                       index,
@@ -2578,7 +2573,8 @@ class RichStudyField extends StatefulWidget {
   final String plainText;
   final String richText;
 
-  final ValueChanged<RichFieldValue> onChanged;
+  final ValueChanged<RichFieldValue>
+      onChanged;
 
   final int minLines;
   final int maxLines;
@@ -2590,8 +2586,8 @@ class RichStudyField extends StatefulWidget {
     required this.plainText,
     required this.richText,
     required this.onChanged,
-    this.minLines = 3,
-    this.maxLines = 8,
+    this.minLines = 2,
+    this.maxLines = 5,
   });
 
   @override
@@ -2613,18 +2609,25 @@ class _RichStudyFieldState
     extends State<RichStudyField> {
   late QuillController controller;
 
+  bool toolbarVisible = false;
+
+  final FocusNode editorFocusNode =
+      FocusNode();
+
   @override
   void initState() {
     super.initState();
 
-    final document = documentFromStoredValue(
+    final document =
+        documentFromStoredValue(
       widget.richText,
       widget.plainText,
     );
 
     controller = QuillController(
       document: document,
-      selection: TextSelection.collapsed(
+      selection:
+          TextSelection.collapsed(
         offset: document.length > 0
             ? document.length - 1
             : 0,
@@ -2632,15 +2635,31 @@ class _RichStudyFieldState
     );
 
     controller.addListener(_changed);
+
+    editorFocusNode.addListener(
+      _focusChanged,
+    );
+  }
+
+  void _focusChanged() {
+    if (!mounted) return;
+
+    setState(() {
+      toolbarVisible =
+          editorFocusNode.hasFocus;
+    });
   }
 
   void _changed() {
-    final plain = controller.document.toPlainText();
+    final plain =
+        controller.document.toPlainText();
 
     widget.onChanged(
       RichFieldValue(
-        plainText: plain.trimRight(),
-        richText: documentToJson(
+        plainText:
+            plain.trimRight(),
+        richText:
+            documentToJson(
           controller.document,
         ),
       ),
@@ -2649,15 +2668,28 @@ class _RichStudyFieldState
 
   @override
   void dispose() {
-    controller.removeListener(_changed);
+    editorFocusNode.removeListener(
+      _focusChanged,
+    );
+    editorFocusNode.dispose();
+
+    controller.removeListener(
+      _changed,
+    );
     controller.dispose();
+
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
+    final theme =
+        Theme.of(context);
+
     final isDark =
-        Theme.of(context).brightness ==
+        theme.brightness ==
             Brightness.dark;
 
     return Padding(
@@ -2672,53 +2704,48 @@ class _RichStudyFieldState
           Text(
             widget.label,
             style: TextStyle(
-              fontSize: 15,
+              fontSize: 14,
               fontWeight:
                   FontWeight.w700,
-              color: Theme.of(context)
+              color: theme
                   .colorScheme
                   .onSurface,
             ),
           ),
+
           const SizedBox(
             height: 7,
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .inputDecorationTheme
-                  .fillColor,
-              borderRadius:
-                  BorderRadius.circular(
-                16,
-              ),
-              border: Border.all(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outline
-                    .withOpacity(
-                      0.35,
-                    ),
-              ),
+
+          AnimatedSize(
+            duration:
+                const Duration(
+              milliseconds: 180,
             ),
-            clipBehavior:
-                Clip.antiAlias,
-            child: Column(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(
-                            0xFF302B38,
-                          )
-                        : const Color(
-                            0xFFF3F0F6,
-                          ),
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Theme.of(
-                          context,
-                        )
+            curve:
+                Curves.easeInOut,
+            child: toolbarVisible
+                ? Container(
+                    decoration:
+                        BoxDecoration(
+                      color: isDark
+                          ? const Color(
+                              0xFF302B38,
+                            )
+                          : const Color(
+                              0xFFF3F0F6,
+                            ),
+                      borderRadius:
+                          const BorderRadius
+                              .vertical(
+                        top:
+                            Radius.circular(
+                          16,
+                        ),
+                      ),
+                      border:
+                          Border.all(
+                        color: theme
                             .colorScheme
                             .outline
                             .withOpacity(
@@ -2726,14 +2753,15 @@ class _RichStudyFieldState
                             ),
                       ),
                     ),
-                  ),
-                  child:
-                      QuillSimpleToolbar(
-                      controller: controller,
+                    child:
+                        QuillSimpleToolbar(
+                      controller:
+                          controller,
                       config:
                           const QuillSimpleToolbarConfig(
                         multiRowsDisplay:
                             true,
+
                         showFontFamily:
                             false,
                         showFontSize:
@@ -2758,16 +2786,22 @@ class _RichStudyFieldState
                             false,
                         showSuperscript:
                             false,
+
                         showClipboardCut:
                             false,
                         showClipboardCopy:
                             false,
                         showClipboardPaste:
                             false,
+
+                        // KEEP colors
                         showColorButton:
                             true,
+
+                        // KEEP highlights
                         showBackgroundColorButton:
                             true,
+
                         showClearFormat:
                             true,
                         showBoldButton:
@@ -2778,59 +2812,95 @@ class _RichStudyFieldState
                             true,
                         showStrikeThrough:
                             true,
+
                         showInlineCode:
                             false,
+
                         showListNumbers:
                             true,
                         showListBullets:
                             true,
                         showListCheck:
                             true,
+
                         showUndo:
                             true,
                         showRedo:
                             true,
                       ),
-                  ),
-                ),
-                Container(
-                  constraints: BoxConstraints(
-                    minHeight: widget.minLines * 24.0,
-                    maxHeight: widget.maxLines * 38.0,
-                  ),
-                  padding: const EdgeInsets.all(12),
-                  child: QuillEditor.basic(
-                    controller: controller,
-                    config: QuillEditorConfig(
-                      placeholder: widget.hint,
-                      padding: EdgeInsets.zero,
-                      expands: false,
-                      autoFocus: false,
-                      scrollable: true,
-                      showCursor: true,
-                      enableInteractiveSelection: true,
-                      enableSelectionToolbar: true,
-                      // Keep focus/selection when using the toolbar,
-                      // especially on Flutter Web.
-                      onTapOutsideEnabled: false,
                     ),
-                  ),
-                ),
-              ],
+                  )
+                : const SizedBox.shrink(),
+          ),
+
+          Container(
+            constraints:
+                BoxConstraints(
+              minHeight:
+                  widget.minLines *
+                      22.0,
+              maxHeight:
+                  widget.maxLines *
+                      30.0,
             ),
-          ),
-          const SizedBox(
-            height: 4,
-          ),
-          Text(
-            'Select text, then use the A/color button for text color or the highlight button for highlighting.',
-            style: TextStyle(
-              fontSize: 11,
-              color: Theme.of(
-                context,
-              )
-                  .colorScheme
-                  .onSurfaceVariant,
+            padding:
+                const EdgeInsets.all(
+              10,
+            ),
+            decoration:
+                BoxDecoration(
+              color: theme
+                  .inputDecorationTheme
+                  .fillColor,
+              borderRadius:
+                  toolbarVisible
+                      ? const BorderRadius
+                          .vertical(
+                          bottom:
+                              Radius.circular(
+                            16,
+                          ),
+                        )
+                      : BorderRadius.circular(
+                          16,
+                        ),
+              border:
+                  Border.all(
+                color: theme
+                    .colorScheme
+                    .outline
+                    .withOpacity(
+                      0.35,
+                    ),
+              ),
+            ),
+            child:
+                QuillEditor.basic(
+              controller:
+                  controller,
+              config:
+                  QuillEditorConfig(
+                placeholder:
+                    '',
+                padding:
+                    EdgeInsets.zero,
+                expands:
+                    false,
+                autoFocus:
+                    false,
+                scrollable:
+                    true,
+                showCursor:
+                    true,
+                enableInteractiveSelection:
+                    true,
+                enableSelectionToolbar:
+                    true,
+                onTapOutsideEnabled:
+                    false,
+                focusNode:
+                    editorFocusNode,
+              ),
             ),
           ),
         ],
@@ -2999,8 +3069,8 @@ class _ChapterCardState
     String hint,
     String plainField,
     String richFieldName, {
-    int minLines = 3,
-    int maxLines = 8,
+    int minLines = 2,
+    int maxLines = 5,
   }) {
     String plainValue = '';
     String richValue = '';
@@ -3099,7 +3169,9 @@ class _ChapterCardState
     }
 
     return RichStudyField(
-      key: ValueKey('${widget.chapter.id}-$plainField'),
+      key: ValueKey(
+        '${widget.chapter.id}-$plainField',
+      ),
       label: label,
       hint: hint,
       plainText: plainValue,
@@ -3186,7 +3258,7 @@ class _ChapterCardState
             'keyVerse',
             'keyVerseRich',
             minLines: 2,
-            maxLines: 5,
+            maxLines: 4,
           ),
 
           richField(
@@ -3269,7 +3341,7 @@ class _ChapterCardState
                 'characterName',
                 'characterNameRich',
                 minLines: 1,
-                maxLines: 3,
+                maxLines: 2,
               ),
 
               richField(
