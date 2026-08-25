@@ -2728,16 +2728,12 @@ class _RichStudyFieldState
                     ),
                   ),
                   child:
-                      SingleChildScrollView(
-                    scrollDirection:
-                        Axis.horizontal,
-                    child:
-                        QuillSimpleToolbar(
+                      QuillSimpleToolbar(
                       controller: controller,
                       config:
                           const QuillSimpleToolbarConfig(
                         multiRowsDisplay:
-                            false,
+                            true,
                         showFontFamily:
                             false,
                         showFontSize:
@@ -2795,7 +2791,6 @@ class _RichStudyFieldState
                         showRedo:
                             true,
                       ),
-                    ),
                   ),
                 ),
                 Container(
