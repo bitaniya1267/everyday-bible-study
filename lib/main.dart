@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -17,8 +18,7 @@ class BitaniyaBibleStudyApp extends StatefulWidget {
       _BitaniyaBibleStudyAppState();
 }
 
-class _BitaniyaBibleStudyAppState
-    extends State<BitaniyaBibleStudyApp> {
+class _BitaniyaBibleStudyAppState extends State<BitaniyaBibleStudyApp> {
   ThemeMode themeMode = ThemeMode.light;
   bool loadingTheme = true;
 
@@ -43,10 +43,7 @@ class _BitaniyaBibleStudyAppState
   Future<void> toggleTheme(bool dark) async {
     final prefs = await SharedPreferences.getInstance();
 
-    await prefs.setBool(
-      'bitaniya_dark_mode',
-      dark,
-    );
+    await prefs.setBool('bitaniya_dark_mode', dark);
 
     if (!mounted) return;
 
@@ -110,7 +107,9 @@ class _BitaniyaBibleStudyAppState
         surfaceTintColor: Colors.transparent,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           return TextStyle(
-            color: states.contains(WidgetState.selected) ? plum : const Color(0xFF6E6A78),
+            color: states.contains(WidgetState.selected)
+                ? plum
+                : const Color(0xFF6E6A78),
             fontWeight: states.contains(WidgetState.selected)
                 ? FontWeight.w700
                 : FontWeight.w500,
@@ -118,28 +117,44 @@ class _BitaniyaBibleStudyAppState
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           return IconThemeData(
-            color: states.contains(WidgetState.selected) ? plum : const Color(0xFF77727F),
+            color: states.contains(WidgetState.selected)
+                ? plum
+                : const Color(0xFF77727F),
           );
         }),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: const Color(0xFFFCFBFD),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFE6E1EA)),
+          borderSide: const BorderSide(
+            color: Color(0xFFE6E1EA),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFE6E1EA)),
+          borderSide: const BorderSide(
+            color: Color(0xFFE6E1EA),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: plum, width: 1.6),
+          borderSide: const BorderSide(
+            color: plum,
+            width: 1.6,
+          ),
         ),
-        labelStyle: const TextStyle(color: Color(0xFF6E6877)),
-        hintStyle: const TextStyle(color: Color(0xFFAAA4B0)),
+        labelStyle: const TextStyle(
+          color: Color(0xFF6E6877),
+        ),
+        hintStyle: const TextStyle(
+          color: Color(0xFFAAA4B0),
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -158,17 +173,23 @@ class _BitaniyaBibleStudyAppState
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: plum,
-          side: const BorderSide(color: Color(0xFFD9D1E6)),
+          side: const BorderSide(
+            color: Color(0xFFD9D1E6),
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: plum,
-          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
@@ -177,7 +198,10 @@ class _BitaniyaBibleStudyAppState
         linearMinHeight: 7,
       ),
       listTileTheme: const ListTileThemeData(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 6,
+        ),
         iconColor: plum,
       ),
       expansionTileTheme: const ExpansionTileThemeData(
@@ -187,13 +211,25 @@ class _BitaniyaBibleStudyAppState
         collapsedTextColor: ink,
         backgroundColor: Colors.transparent,
         collapsedBackgroundColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
-        collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(
+            Radius.circular(18),
+          ),
+        ),
+        collapsedShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(
+            Radius.circular(18),
+          ),
+        ),
       ),
-      iconTheme: const IconThemeData(color: plum),
+      iconTheme: const IconThemeData(
+        color: plum,
+      ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
       ),
     );
   }
@@ -236,7 +272,9 @@ class _BitaniyaBibleStudyAppState
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(22),
-          side: const BorderSide(color: Color(0xFF37313F)),
+          side: const BorderSide(
+            color: Color(0xFF37313F),
+          ),
         ),
       ),
       dividerTheme: const DividerThemeData(
@@ -252,43 +290,70 @@ class _BitaniyaBibleStudyAppState
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surfaceSoft,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFF413A49)),
+          borderSide: const BorderSide(
+            color: Color(0xFF413A49),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFF413A49)),
+          borderSide: const BorderSide(
+            color: Color(0xFF413A49),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: plum, width: 1.6),
+          borderSide: const BorderSide(
+            color: plum,
+            width: 1.6,
+          ),
         ),
-        labelStyle: const TextStyle(color: Color(0xFFD6CFDD)),
-        hintStyle: const TextStyle(color: Color(0xFF9E96A8)),
+        labelStyle: const TextStyle(
+          color: Color(0xFFD6CFDD),
+        ),
+        hintStyle: const TextStyle(
+          color: Color(0xFF9E96A8),
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: plum,
           foregroundColor: const Color(0xFF201A29),
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.2,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: plum,
-          side: const BorderSide(color: Color(0xFF51475E)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+          side: const BorderSide(
+            color: Color(0xFF51475E),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: plum,
-          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
@@ -297,7 +362,10 @@ class _BitaniyaBibleStudyAppState
         linearMinHeight: 7,
       ),
       listTileTheme: const ListTileThemeData(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 6,
+        ),
         iconColor: plum,
       ),
       expansionTileTheme: const ExpansionTileThemeData(
@@ -305,13 +373,25 @@ class _BitaniyaBibleStudyAppState
         collapsedIconColor: Color(0xFFC5BDCF),
         backgroundColor: Colors.transparent,
         collapsedBackgroundColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
-        collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(18))),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(
+            Radius.circular(18),
+          ),
+        ),
+        collapsedShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(
+            Radius.circular(18),
+          ),
+        ),
       ),
-      iconTheme: const IconThemeData(color: plum),
+      iconTheme: const IconThemeData(
+        color: plum,
+      ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
       ),
     );
   }
@@ -335,12 +415,63 @@ class _BitaniyaBibleStudyAppState
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: themeMode,
+      localizationsDelegates: const [
+        FlutterQuillLocalizations.delegate,
+      ],
       home: AppShell(
         isDarkMode: themeMode == ThemeMode.dark,
         onThemeChanged: toggleTheme,
       ),
     );
   }
+}
+
+// ============================================================
+// RICH TEXT HELPERS
+// ============================================================
+
+String documentToJson(Document document) {
+  return jsonEncode(document.toDelta().toJson());
+}
+
+Document documentFromJson(String value) {
+  try {
+    final decoded = jsonDecode(value);
+
+    if (decoded is List) {
+      return Document.fromJson(
+        List<dynamic>.from(decoded),
+      );
+    }
+  } catch (_) {}
+
+  return Document();
+}
+
+Document documentFromStoredValue(
+  String richText,
+  String plainText,
+) {
+  if (richText.trim().isNotEmpty) {
+    final document = documentFromJson(richText);
+
+    if (!document.isEmpty()) {
+      return document;
+    }
+  }
+
+  if (plainText.isNotEmpty) {
+    return Document.fromJson([
+      {
+        'insert': plainText,
+      },
+      {
+        'insert': '\n',
+      },
+    ]);
+  }
+
+  return Document();
 }
 
 // ============================================================
@@ -366,6 +497,22 @@ class ChapterEntry {
   String characterActions;
   String characterLessons;
 
+  // Rich text versions of the study fields.
+  String keyVerseRich;
+  String summaryRich;
+  String observationsRich;
+  String meaningRich;
+  String lessonsRich;
+  String applicationRich;
+  String questionsRich;
+  String prayerRich;
+
+  String characterNameRich;
+  String characterWhoRich;
+  String characterTraitsRich;
+  String characterActionsRich;
+  String characterLessonsRich;
+
   ChapterEntry({
     required this.id,
     required this.reference,
@@ -382,6 +529,19 @@ class ChapterEntry {
     this.characterTraits = '',
     this.characterActions = '',
     this.characterLessons = '',
+    this.keyVerseRich = '',
+    this.summaryRich = '',
+    this.observationsRich = '',
+    this.meaningRich = '',
+    this.lessonsRich = '',
+    this.applicationRich = '',
+    this.questionsRich = '',
+    this.prayerRich = '',
+    this.characterNameRich = '',
+    this.characterWhoRich = '',
+    this.characterTraitsRich = '',
+    this.characterActionsRich = '',
+    this.characterLessonsRich = '',
   });
 
   Map<String, dynamic> toJson() {
@@ -401,6 +561,21 @@ class ChapterEntry {
       'characterTraits': characterTraits,
       'characterActions': characterActions,
       'characterLessons': characterLessons,
+
+      'keyVerseRich': keyVerseRich,
+      'summaryRich': summaryRich,
+      'observationsRich': observationsRich,
+      'meaningRich': meaningRich,
+      'lessonsRich': lessonsRich,
+      'applicationRich': applicationRich,
+      'questionsRich': questionsRich,
+      'prayerRich': prayerRich,
+
+      'characterNameRich': characterNameRich,
+      'characterWhoRich': characterWhoRich,
+      'characterTraitsRich': characterTraitsRich,
+      'characterActionsRich': characterActionsRich,
+      'characterLessonsRich': characterLessonsRich,
     };
   }
 
@@ -422,6 +597,29 @@ class ChapterEntry {
       characterTraits: json['characterTraits']?.toString() ?? '',
       characterActions: json['characterActions']?.toString() ?? '',
       characterLessons: json['characterLessons']?.toString() ?? '',
+
+      keyVerseRich: json['keyVerseRich']?.toString() ?? '',
+      summaryRich: json['summaryRich']?.toString() ?? '',
+      observationsRich:
+          json['observationsRich']?.toString() ?? '',
+      meaningRich: json['meaningRich']?.toString() ?? '',
+      lessonsRich: json['lessonsRich']?.toString() ?? '',
+      applicationRich:
+          json['applicationRich']?.toString() ?? '',
+      questionsRich:
+          json['questionsRich']?.toString() ?? '',
+      prayerRich: json['prayerRich']?.toString() ?? '',
+
+      characterNameRich:
+          json['characterNameRich']?.toString() ?? '',
+      characterWhoRich:
+          json['characterWhoRich']?.toString() ?? '',
+      characterTraitsRich:
+          json['characterTraitsRich']?.toString() ?? '',
+      characterActionsRich:
+          json['characterActionsRich']?.toString() ?? '',
+      characterLessonsRich:
+          json['characterLessonsRich']?.toString() ?? '',
     );
   }
 }
@@ -478,7 +676,6 @@ class BibleBook {
     this.chapters,
   );
 }
-
 
 const List<BibleBook> newTestamentBooks = [
   BibleBook('Matthew', 28),
@@ -573,7 +770,7 @@ class StudyStorage {
   ) async {
     final backup = {
       'app': 'Bitaniya Bible Study',
-      'version': 1,
+      'version': 2,
       'createdAt': DateTime.now().toIso8601String(),
       'studies':
           days.map((day) => day.toJson()).toList(),
@@ -804,12 +1001,10 @@ class _AppShellState extends State<AppShell> {
           );
         },
       ),
-
       DailyStudyScreen(
         days: days,
         onSaveDay: updateDay,
       ),
-
       BackupScreen(
         days: days,
         onRestored: loadData,
@@ -892,7 +1087,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool loadingReading = true;
 
-  // The New Testament section itself is closed by default.
   bool booksExpanded = false;
 
   @override
@@ -1063,7 +1257,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-
         SliverPadding(
           padding:
               const EdgeInsets.fromLTRB(
@@ -1076,15 +1269,6 @@ class _HomeScreenState extends State<HomeScreen> {
             delegate:
                 SliverChildListDelegate(
               [
-                // ==================================================
-                // TOP ROW
-                // ==================================================
-                //
-                // Only chapter count + study days.
-                // No New Testament heading here.
-                // No Writing Completed tracker.
-                //
-
                 Row(
                   children: [
                     Expanded(
@@ -1094,7 +1278,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             '$studyChapterCount',
                       ),
                     ),
-
                     Container(
                       height: 34,
                       width: 1,
@@ -1104,7 +1287,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           .colorScheme
                           .outlineVariant,
                     ),
-
                     Expanded(
                       child: _TopProgressItem(
                         icon:
@@ -1115,19 +1297,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-
                 const SizedBox(
                   height: 18,
                 ),
-
-                // ==================================================
-                // NEW TESTAMENT BOOKS
-                // ==================================================
-                //
-                // This is BEFORE the progress section.
-                // Only ONE New Testament heading.
-                //
-
                 Card(
                   clipBehavior:
                       Clip.antiAlias,
@@ -1178,9 +1350,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
-
-                      // Books are hidden until the
-                      // New Testament section is opened.
                       if (booksExpanded)
                         ...newTestamentBooks.map(
                           _buildBookCard,
@@ -1188,19 +1357,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-
                 const SizedBox(
                   height: 18,
                 ),
-
-                // ==================================================
-                // READING PROGRESS
-                // ==================================================
-                //
-                // "Completed" is next to the percentage.
-                // No separate Writing Completed bar.
-                //
-
                 Card(
                   child: Padding(
                     padding:
@@ -1241,22 +1400,17 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
-
                         const SizedBox(
                           height: 8,
                         ),
-
                         LinearProgressIndicator(
                           value:
                               todayPercentage,
                           minHeight: 7,
                         ),
-
                         const SizedBox(
                           height: 8,
                         ),
-
-                        // KEEP 0 / 260 HERE.
                         Row(
                           children: [
                             Expanded(
@@ -1289,15 +1443,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(
                   height: 22,
                 ),
-
-                // ==================================================
-                // STUDY HISTORY
-                // ==================================================
-
                 const Text(
                   'Your Study History',
                   style: TextStyle(
@@ -1306,11 +1454,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(
                   height: 10,
                 ),
-
                 if (sorted.isEmpty)
                   const _EmptyCard(
                     icon: Icons
@@ -1443,7 +1589,6 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Card(
         child: ExpansionTile(
           initiallyExpanded: false,
-
           leading: CircleAvatar(
             child: Text(
               '$read',
@@ -1455,7 +1600,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-
           title: Text(
             book.name,
             style:
@@ -1464,11 +1608,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   FontWeight.w700,
             ),
           ),
-
           subtitle: Text(
             '$read / ${book.chapters}',
           ),
-
           childrenPadding:
               const EdgeInsets.fromLTRB(
             16,
@@ -1476,17 +1618,14 @@ class _HomeScreenState extends State<HomeScreen> {
             16,
             16,
           ),
-
           children: [
             LinearProgressIndicator(
               value: percentage,
               minHeight: 6,
             ),
-
             const SizedBox(
               height: 12,
             ),
-
             GridView.builder(
               shrinkWrap: true,
               physics:
@@ -2032,7 +2171,6 @@ class _DailyStudyScreenState
               ),
             ],
           ),
-
           SliverPadding(
             padding:
                 const EdgeInsets.fromLTRB(
@@ -2046,11 +2184,9 @@ class _DailyStudyScreenState
                   SliverChildListDelegate(
                 [
                   _buildDayHeader(),
-
                   const SizedBox(
                     height: 16,
                   ),
-
                   if (day.chapters.isEmpty)
                     Card(
                       child:
@@ -2099,7 +2235,6 @@ class _DailyStudyScreenState
                         ),
                       ),
                     ),
-
                   ...List.generate(
                     day.chapters.length,
                     (index) {
@@ -2135,11 +2270,9 @@ class _DailyStudyScreenState
                       );
                     },
                   ),
-
                   const SizedBox(
                     height: 4,
                   ),
-
                   SizedBox(
                     width:
                         double.infinity,
@@ -2158,11 +2291,9 @@ class _DailyStudyScreenState
                       ),
                     ),
                   ),
-
                   const SizedBox(
                     height: 12,
                   ),
-
                   SizedBox(
                     width:
                         double.infinity,
@@ -2216,11 +2347,9 @@ class _DailyStudyScreenState
                   Icons.calendar_today,
                 ),
               ),
-
               const SizedBox(
                 width: 14,
               ),
-
               Expanded(
                 child: Text(
                   '${selectedDate.day}/'
@@ -2234,7 +2363,6 @@ class _DailyStudyScreenState
                   ),
                 ),
               ),
-
               const Icon(
                 Icons.chevron_right,
               ),
@@ -2402,7 +2530,6 @@ class _DailyStudyEditorBodyState
               );
             },
           ),
-
           OutlinedButton.icon(
             onPressed:
                 addChapter,
@@ -2415,11 +2542,9 @@ class _DailyStudyEditorBodyState
               'Add chapter',
             ),
           ),
-
           const SizedBox(
             height: 14,
           ),
-
           FilledButton.icon(
             onPressed:
                 save,
@@ -2430,6 +2555,294 @@ class _DailyStudyEditorBodyState
             label:
                 const Text(
               'Save',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+// RICH TEXT FIELD
+// ============================================================
+
+class RichStudyField extends StatefulWidget {
+  final String label;
+  final String hint;
+
+  final String plainText;
+  final String richText;
+
+  final ValueChanged<RichFieldValue> onChanged;
+
+  final int minLines;
+  final int maxLines;
+
+  const RichStudyField({
+    super.key,
+    required this.label,
+    required this.hint,
+    required this.plainText,
+    required this.richText,
+    required this.onChanged,
+    this.minLines = 3,
+    this.maxLines = 8,
+  });
+
+  @override
+  State<RichStudyField> createState() =>
+      _RichStudyFieldState();
+}
+
+class RichFieldValue {
+  final String plainText;
+  final String richText;
+
+  const RichFieldValue({
+    required this.plainText,
+    required this.richText,
+  });
+}
+
+class _RichStudyFieldState
+    extends State<RichStudyField> {
+  late QuillController controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final document = documentFromStoredValue(
+      widget.richText,
+      widget.plainText,
+    );
+
+    controller = QuillController(
+      document: document,
+      selection: TextSelection.collapsed(
+        offset: document.length > 0
+            ? document.length - 1
+            : 0,
+      ),
+    );
+
+    controller.addListener(_changed);
+  }
+
+  void _changed() {
+    final plain = controller.document.toPlainText();
+
+    widget.onChanged(
+      RichFieldValue(
+        plainText: plain.trimRight(),
+        richText: documentToJson(
+          controller.document,
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    controller.removeListener(_changed);
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark =
+        Theme.of(context).brightness ==
+            Brightness.dark;
+
+    return Padding(
+      padding:
+          const EdgeInsets.only(
+        bottom: 14,
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.label,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight:
+                  FontWeight.w700,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface,
+            ),
+          ),
+          const SizedBox(
+            height: 7,
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context)
+                  .inputDecorationTheme
+                  .fillColor,
+              borderRadius:
+                  BorderRadius.circular(
+                16,
+              ),
+              border: Border.all(
+                color: Theme.of(context)
+                    .colorScheme
+                    .outline
+                    .withOpacity(
+                      0.35,
+                    ),
+              ),
+            ),
+            clipBehavior:
+                Clip.antiAlias,
+            child: Column(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(
+                            0xFF302B38,
+                          )
+                        : const Color(
+                            0xFFF3F0F6,
+                          ),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Theme.of(
+                          context,
+                        )
+                            .colorScheme
+                            .outline
+                            .withOpacity(
+                              0.25,
+                            ),
+                      ),
+                    ),
+                  ),
+                  child:
+                      SingleChildScrollView(
+                    scrollDirection:
+                        Axis.horizontal,
+                    child:
+                        QuillSimpleToolbar(
+                      controller:
+                          controller,
+                      config:
+                          const QuillSimpleToolbarConfig(
+                        multiRowsDisplay:
+                            false,
+                        showFontFamily:
+                            false,
+                        showFontSize:
+                            false,
+                        showAlignmentButtons:
+                            false,
+                        showHeaderStyle:
+                            false,
+                        showCodeBlock:
+                            false,
+                        showQuote:
+                            false,
+                        showIndent:
+                            false,
+                        showLink:
+                            false,
+                        showSearchButton:
+                            false,
+                        showDirection:
+                            false,
+                        showSubscript:
+                            false,
+                        showSuperscript:
+                            false,
+                        showClipboardCut:
+                            false,
+                        showClipboardCopy:
+                            false,
+                        showClipboardPaste:
+                            false,
+                        showColorButton:
+                            true,
+                        showBackgroundColorButton:
+                            true,
+                        showClearFormat:
+                            true,
+                        showBoldButton:
+                            true,
+                        showItalicButton:
+                            true,
+                        showUnderLineButton:
+                            true,
+                        showStrikeThrough:
+                            true,
+                        showInlineCode:
+                            false,
+                        showListNumbers:
+                            true,
+                        showListBullets:
+                            true,
+                        showListCheck:
+                            true,
+                        showUndo:
+                            true,
+                        showRedo:
+                            true,
+                      ),
+                    ),
+                  ),
+                ),
+                Container(
+                  constraints:
+                      BoxConstraints(
+                    minHeight:
+                        widget.minLines * 24.0,
+                    maxHeight:
+                        widget.maxLines * 38.0,
+                  ),
+                  padding:
+                      const EdgeInsets.all(
+                    12,
+                  ),
+                  child:
+                      QuillEditor.basic(
+                    controller:
+                        controller,
+                    config:
+                        QuillEditorConfig(
+                      placeholder:
+                          widget.hint,
+                      padding:
+                          EdgeInsets.zero,
+                      expands:
+                          false,
+                      autoFocus:
+                          false,
+                      scrollable:
+                          true,
+                      showCursor:
+                          true,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(
+            height: 4,
+          ),
+          Text(
+            'Select text, then use the A/color button for text color or the highlight button for highlighting.',
+            style: TextStyle(
+              fontSize: 11,
+              color: Theme.of(
+                context,
+              )
+                  .colorScheme
+                  .onSurfaceVariant,
             ),
           ),
         ],
@@ -2469,45 +2882,6 @@ class _ChapterCardState
   late final TextEditingController
       referenceController;
 
-  late final TextEditingController
-      keyVerseController;
-
-  late final TextEditingController
-      summaryController;
-
-  late final TextEditingController
-      observationsController;
-
-  late final TextEditingController
-      meaningController;
-
-  late final TextEditingController
-      lessonsController;
-
-  late final TextEditingController
-      applicationController;
-
-  late final TextEditingController
-      questionsController;
-
-  late final TextEditingController
-      prayerController;
-
-  late final TextEditingController
-      characterNameController;
-
-  late final TextEditingController
-      characterWhoController;
-
-  late final TextEditingController
-      characterTraitsController;
-
-  late final TextEditingController
-      characterActionsController;
-
-  late final TextEditingController
-      characterLessonsController;
-
   @override
   void initState() {
     super.initState();
@@ -2516,174 +2890,240 @@ class _ChapterCardState
         TextEditingController(
       text: widget.chapter.reference,
     );
-
-    keyVerseController =
-        TextEditingController(
-      text: widget.chapter.keyVerse,
-    );
-
-    summaryController =
-        TextEditingController(
-      text: widget.chapter.summary,
-    );
-
-    observationsController =
-        TextEditingController(
-      text: widget.chapter.observations,
-    );
-
-    meaningController =
-        TextEditingController(
-      text: widget.chapter.meaning,
-    );
-
-    lessonsController =
-        TextEditingController(
-      text: widget.chapter.lessons,
-    );
-
-    applicationController =
-        TextEditingController(
-      text: widget.chapter.application,
-    );
-
-    questionsController =
-        TextEditingController(
-      text: widget.chapter.questions,
-    );
-
-    prayerController =
-        TextEditingController(
-      text: widget.chapter.prayer,
-    );
-
-    characterNameController =
-        TextEditingController(
-      text: widget.chapter.characterName,
-    );
-
-    characterWhoController =
-        TextEditingController(
-      text: widget.chapter.characterWho,
-    );
-
-    characterTraitsController =
-        TextEditingController(
-      text: widget.chapter.characterTraits,
-    );
-
-    characterActionsController =
-        TextEditingController(
-      text: widget.chapter.characterActions,
-    );
-
-    characterLessonsController =
-        TextEditingController(
-      text: widget.chapter.characterLessons,
-    );
   }
 
   @override
   void dispose() {
     referenceController.dispose();
-    keyVerseController.dispose();
-    summaryController.dispose();
-    observationsController.dispose();
-    meaningController.dispose();
-    lessonsController.dispose();
-    applicationController.dispose();
-    questionsController.dispose();
-    prayerController.dispose();
-
-    characterNameController.dispose();
-    characterWhoController.dispose();
-    characterTraitsController.dispose();
-    characterActionsController.dispose();
-    characterLessonsController.dispose();
-
     super.dispose();
   }
 
-  void sync() {
+  void syncReference() {
     widget.chapter.reference =
         referenceController.text;
-
-    widget.chapter.keyVerse =
-        keyVerseController.text;
-
-    widget.chapter.summary =
-        summaryController.text;
-
-    widget.chapter.observations =
-        observationsController.text;
-
-    widget.chapter.meaning =
-        meaningController.text;
-
-    widget.chapter.lessons =
-        lessonsController.text;
-
-    widget.chapter.application =
-        applicationController.text;
-
-    widget.chapter.questions =
-        questionsController.text;
-
-    widget.chapter.prayer =
-        prayerController.text;
-
-    widget.chapter.characterName =
-        characterNameController.text;
-
-    widget.chapter.characterWho =
-        characterWhoController.text;
-
-    widget.chapter.characterTraits =
-        characterTraitsController.text;
-
-    widget.chapter.characterActions =
-        characterActionsController.text;
-
-    widget.chapter.characterLessons =
-        characterLessonsController.text;
 
     widget.onChanged();
   }
 
-  Widget field(
+  void updateRich(
+    String plainField,
+    String richField,
+    RichFieldValue value,
+  ) {
+    switch (plainField) {
+      case 'keyVerse':
+        widget.chapter.keyVerse =
+            value.plainText;
+        widget.chapter.keyVerseRich =
+            value.richText;
+        break;
+
+      case 'summary':
+        widget.chapter.summary =
+            value.plainText;
+        widget.chapter.summaryRich =
+            value.richText;
+        break;
+
+      case 'observations':
+        widget.chapter.observations =
+            value.plainText;
+        widget.chapter.observationsRich =
+            value.richText;
+        break;
+
+      case 'meaning':
+        widget.chapter.meaning =
+            value.plainText;
+        widget.chapter.meaningRich =
+            value.richText;
+        break;
+
+      case 'lessons':
+        widget.chapter.lessons =
+            value.plainText;
+        widget.chapter.lessonsRich =
+            value.richText;
+        break;
+
+      case 'application':
+        widget.chapter.application =
+            value.plainText;
+        widget.chapter.applicationRich =
+            value.richText;
+        break;
+
+      case 'questions':
+        widget.chapter.questions =
+            value.plainText;
+        widget.chapter.questionsRich =
+            value.richText;
+        break;
+
+      case 'prayer':
+        widget.chapter.prayer =
+            value.plainText;
+        widget.chapter.prayerRich =
+            value.richText;
+        break;
+
+      case 'characterName':
+        widget.chapter.characterName =
+            value.plainText;
+        widget.chapter.characterNameRich =
+            value.richText;
+        break;
+
+      case 'characterWho':
+        widget.chapter.characterWho =
+            value.plainText;
+        widget.chapter.characterWhoRich =
+            value.richText;
+        break;
+
+      case 'characterTraits':
+        widget.chapter.characterTraits =
+            value.plainText;
+        widget.chapter.characterTraitsRich =
+            value.richText;
+        break;
+
+      case 'characterActions':
+        widget.chapter.characterActions =
+            value.plainText;
+        widget.chapter.characterActionsRich =
+            value.richText;
+        break;
+
+      case 'characterLessons':
+        widget.chapter.characterLessons =
+            value.plainText;
+        widget.chapter.characterLessonsRich =
+            value.richText;
+        break;
+    }
+
+    widget.onChanged();
+  }
+
+  Widget richField(
     String label,
-    TextEditingController controller, {
-    String? hint,
-    int minLines = 2,
-    int maxLines = 6,
+    String hint,
+    String plainField,
+    String richFieldName, {
+    int minLines = 3,
+    int maxLines = 8,
   }) {
-    return Padding(
-      padding:
-          const EdgeInsets.only(
-        bottom: 12,
-      ),
-      child: TextField(
-        controller:
-            controller,
-        minLines:
-            minLines,
-        maxLines:
-            maxLines,
-        textCapitalization:
-            TextCapitalization.sentences,
-        onChanged: (_) {
-          sync();
-        },
-        decoration:
-            InputDecoration(
-          labelText:
-              label,
-          hintText:
-              hint,
-          alignLabelWithHint:
-              true,
-        ),
-      ),
+    String plainValue = '';
+    String richValue = '';
+
+    switch (plainField) {
+      case 'keyVerse':
+        plainValue =
+            widget.chapter.keyVerse;
+        richValue =
+            widget.chapter.keyVerseRich;
+        break;
+
+      case 'summary':
+        plainValue =
+            widget.chapter.summary;
+        richValue =
+            widget.chapter.summaryRich;
+        break;
+
+      case 'observations':
+        plainValue =
+            widget.chapter.observations;
+        richValue =
+            widget.chapter.observationsRich;
+        break;
+
+      case 'meaning':
+        plainValue =
+            widget.chapter.meaning;
+        richValue =
+            widget.chapter.meaningRich;
+        break;
+
+      case 'lessons':
+        plainValue =
+            widget.chapter.lessons;
+        richValue =
+            widget.chapter.lessonsRich;
+        break;
+
+      case 'application':
+        plainValue =
+            widget.chapter.application;
+        richValue =
+            widget.chapter.applicationRich;
+        break;
+
+      case 'questions':
+        plainValue =
+            widget.chapter.questions;
+        richValue =
+            widget.chapter.questionsRich;
+        break;
+
+      case 'prayer':
+        plainValue =
+            widget.chapter.prayer;
+        richValue =
+            widget.chapter.prayerRich;
+        break;
+
+      case 'characterName':
+        plainValue =
+            widget.chapter.characterName;
+        richValue =
+            widget.chapter.characterNameRich;
+        break;
+
+      case 'characterWho':
+        plainValue =
+            widget.chapter.characterWho;
+        richValue =
+            widget.chapter.characterWhoRich;
+        break;
+
+      case 'characterTraits':
+        plainValue =
+            widget.chapter.characterTraits;
+        richValue =
+            widget.chapter.characterTraitsRich;
+        break;
+
+      case 'characterActions':
+        plainValue =
+            widget.chapter.characterActions;
+        richValue =
+            widget.chapter.characterActionsRich;
+        break;
+
+      case 'characterLessons':
+        plainValue =
+            widget.chapter.characterLessons;
+        richValue =
+            widget.chapter.characterLessonsRich;
+        break;
+    }
+
+    return RichStudyField(
+      label: label,
+      hint: hint,
+      plainText: plainValue,
+      richText: richValue,
+      minLines: minLines,
+      maxLines: maxLines,
+      onChanged: (value) {
+        updateRich(
+          plainField,
+          richFieldName,
+          value,
+        );
+      },
     );
   }
 
@@ -2696,17 +3136,14 @@ class _ChapterCardState
           Clip.antiAlias,
       child:
           ExpansionTile(
-        // Chapters are CLOSED by default.
         initiallyExpanded:
             false,
-
         tilePadding:
             const EdgeInsets
                 .symmetric(
           horizontal: 16,
           vertical: 5,
         ),
-
         title: Text(
           'Chapter ${widget.number}',
           style:
@@ -2716,7 +3153,6 @@ class _ChapterCardState
             fontSize: 18,
           ),
         ),
-
         childrenPadding:
             const EdgeInsets
                 .fromLTRB(
@@ -2725,13 +3161,12 @@ class _ChapterCardState
           16,
           16,
         ),
-
         children: [
           TextField(
             controller:
                 referenceController,
             onChanged:
-                (_) => sync(),
+                (_) => syncReference(),
             textCapitalization:
                 TextCapitalization.words,
             decoration:
@@ -2756,54 +3191,55 @@ class _ChapterCardState
             title: 'Chapter Study',
           ),
 
-
-          field(
+          richField(
             'Key verse',
-            keyVerseController,
-            hint:
-                'Which verse stands out to you?',
+            'Which verse stands out to you?',
+            'keyVerse',
+            'keyVerseRich',
+            minLines: 2,
+            maxLines: 5,
           ),
 
-          field(
+          richField(
             'What happens in this chapter?',
-            summaryController,
-            hint:
-                'Summarize the chapter in your own words.',
+            'Summarize the chapter in your own words.',
+            'summary',
+            'summaryRich',
           ),
 
-          field(
+          richField(
             'What do you notice?',
-            observationsController,
-            hint:
-                'Important people, events, commands, promises, repeated words, contrasts, etc.',
+            'Important people, events, commands, promises, repeated words, contrasts, etc.',
+            'observations',
+            'observationsRich',
           ),
 
-          field(
+          richField(
             'What does it mean?',
-            meaningController,
-            hint:
-                'What do you think the main message of the chapter is?',
+            'What do you think the main message of the chapter is?',
+            'meaning',
+            'meaningRich',
           ),
 
-          field(
+          richField(
             'What does this teach me about God?',
-            lessonsController,
-            hint:
-                'God’s character, His will, His promises, His actions, etc.',
+            'God’s character, His will, His promises, His actions, etc.',
+            'lessons',
+            'lessonsRich',
           ),
 
-          field(
+          richField(
             'How should I respond?',
-            applicationController,
-            hint:
-                'What can you believe, change, obey, practice, or remember?',
+            'What can you believe, change, obey, practice, or remember?',
+            'application',
+            'applicationRich',
           ),
 
-          field(
+          richField(
             'Questions I still have',
-            questionsController,
-            hint:
-                'Write anything you do not understand or want to study later.',
+            'Write anything you do not understand or want to study later.',
+            'questions',
+            'questionsRich',
           ),
 
           const Divider(
@@ -2813,10 +3249,8 @@ class _ChapterCardState
           ExpansionTile(
             initiallyExpanded:
                 false,
-
             tilePadding:
                 EdgeInsets.zero,
-
             title:
                 const Text(
               'Character Study',
@@ -2827,57 +3261,54 @@ class _ChapterCardState
                 fontSize: 17,
               ),
             ),
-
             subtitle:
                 const Text(
               'Study a person from this chapter',
             ),
-
             leading:
                 const Icon(
               Icons.person_outline,
             ),
-
             children: [
               const SizedBox(
                 height: 8,
               ),
 
-              field(
+              richField(
                 'Character name',
-                characterNameController,
-                hint:
-                    'Example: Peter',
+                'Example: Peter',
+                'characterName',
+                'characterNameRich',
                 minLines: 1,
-                maxLines: 2,
+                maxLines: 3,
               ),
 
-              field(
+              richField(
                 'Who is this person?',
-                characterWhoController,
-                hint:
-                    'What do we learn about their identity and role?',
+                'What do we learn about their identity and role?',
+                'characterWho',
+                'characterWhoRich',
               ),
 
-              field(
+              richField(
                 'What character traits do I see?',
-                characterTraitsController,
-                hint:
-                    'Faith, courage, weakness, humility, pride, obedience, etc.',
+                'Faith, courage, weakness, humility, pride, obedience, etc.',
+                'characterTraits',
+                'characterTraitsRich',
               ),
 
-              field(
+              richField(
                 'What did this person do?',
-                characterActionsController,
-                hint:
-                    'Important choices, words, actions, successes, failures.',
+                'Important choices, words, actions, successes, failures.',
+                'characterActions',
+                'characterActionsRich',
               ),
 
-              field(
+              richField(
                 'What can I learn from this person?',
-                characterLessonsController,
-                hint:
-                    'What should I imitate, avoid, or learn from their story?',
+                'What should I imitate, avoid, or learn from their story?',
+                'characterLessons',
+                'characterLessonsRich',
               ),
             ],
           ),
@@ -2893,11 +3324,11 @@ class _ChapterCardState
                 'Response',
           ),
 
-          field(
+          richField(
             'Prayer / personal response',
-            prayerController,
-            hint:
-                'Write a short prayer or personal response to what you studied.',
+            'Write a short prayer or personal response to what you studied.',
+            'prayer',
+            'prayerRich',
           ),
 
           if (widget.canDelete)
@@ -2923,7 +3354,6 @@ class _ChapterCardState
     );
   }
 }
-
 
 // ============================================================
 // SECTION TITLE
@@ -3175,7 +3605,6 @@ class _BackupScreenState
             'Backup & Restore',
           ),
         ),
-
         SliverPadding(
           padding:
               const EdgeInsets.fromLTRB(
@@ -3241,11 +3670,9 @@ class _BackupScreenState
                     ),
                   ),
                 ),
-
                 const SizedBox(
                   height: 14,
                 ),
-
                 SizedBox(
                   height: 52,
                   child:
@@ -3262,11 +3689,9 @@ class _BackupScreenState
                     ),
                   ),
                 ),
-
                 const SizedBox(
                   height: 10,
                 ),
-
                 SizedBox(
                   height: 52,
                   child:
@@ -3283,11 +3708,9 @@ class _BackupScreenState
                     ),
                   ),
                 ),
-
                 const SizedBox(
                   height: 22,
                 ),
-
                 const Text(
                   'Restore',
                   style:
@@ -3297,19 +3720,15 @@ class _BackupScreenState
                         FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(
                   height: 8,
                 ),
-
                 const Text(
                   'Paste a backup below, then press Restore.',
                 ),
-
                 const SizedBox(
                   height: 12,
                 ),
-
                 TextField(
                   controller:
                       backupController,
@@ -3325,11 +3744,9 @@ class _BackupScreenState
                         true,
                   ),
                 ),
-
                 const SizedBox(
                   height: 10,
                 ),
-
                 SizedBox(
                   height: 52,
                   child:
@@ -3346,7 +3763,6 @@ class _BackupScreenState
                     ),
                   ),
                 ),
-
                 if (showingBackup) ...[
                   const SizedBox(
                     height: 20,
