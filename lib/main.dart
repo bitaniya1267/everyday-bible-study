@@ -2612,8 +2612,6 @@ class RichFieldValue {
 class _RichStudyFieldState
     extends State<RichStudyField> {
   late QuillController controller;
-  late FocusNode editorFocusNode;
-  bool isEditorFocused = false;
 
   @override
   void initState() {
@@ -2634,14 +2632,6 @@ class _RichStudyFieldState
     );
 
     controller.addListener(_changed);
-
-    editorFocusNode = FocusNode();
-    editorFocusNode.addListener(() {
-      if (!mounted) return;
-      setState(() {
-        isEditorFocused = editorFocusNode.hasFocus;
-      });
-    });
   }
 
   void _changed() {
@@ -2661,147 +2651,193 @@ class _RichStudyFieldState
   void dispose() {
     controller.removeListener(_changed);
     controller.dispose();
-    editorFocusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark =
-        Theme.of(context).brightness == Brightness.dark;
+        Theme.of(context).brightness ==
+            Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding:
+          const EdgeInsets.only(
+        bottom: 14,
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Text(
             widget.label,
             style: TextStyle(
               fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight:
+                  FontWeight.w700,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface,
             ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(
+            height: 7,
+          ),
           Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).inputDecorationTheme.fillColor,
-              borderRadius: BorderRadius.circular(16),
+              color: Theme.of(context)
+                  .inputDecorationTheme
+                  .fillColor,
+              borderRadius:
+                  BorderRadius.circular(
+                16,
+              ),
               border: Border.all(
                 color: Theme.of(context)
                     .colorScheme
                     .outline
-                    .withOpacity(0.35),
+                    .withOpacity(
+                      0.35,
+                    ),
               ),
             ),
-            clipBehavior: Clip.antiAlias,
+            clipBehavior:
+                Clip.antiAlias,
             child: Column(
               children: [
-                // The full toolbar is still here. It is simply hidden until
-                // the note is opened, keeping the study screen clean.
-                if (isEditorFocused)
-                  Container(
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF302B38)
-                          : const Color(0xFFF3F0F6),
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .outline
-                              .withOpacity(0.25),
-                        ),
-                      ),
-                    ),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 760),
-                        child: QuillSimpleToolbar(
-                          controller: controller,
-                          config: const QuillSimpleToolbarConfig(
-                            // Keep every formatting feature from the working
-                            // version, but let the toolbar wrap instead of
-                            // becoming one very wide horizontal strip.
-                            multiRowsDisplay: true,
-                            showFontFamily: false,
-                            showFontSize: false,
-                            showAlignmentButtons: false,
-                            showHeaderStyle: false,
-                            showCodeBlock: false,
-                            showQuote: false,
-                            showIndent: false,
-                            showLink: false,
-                            showSearchButton: false,
-                            showDirection: false,
-                            showSubscript: false,
-                            showSuperscript: false,
-                            showClipboardCut: false,
-                            showClipboardCopy: false,
-                            showClipboardPaste: false,
-                            showColorButton: true,
-                            showBackgroundColorButton: true,
-                            showClearFormat: true,
-                            showBoldButton: true,
-                            showItalicButton: true,
-                            showUnderLineButton: true,
-                            showStrikeThrough: true,
-                            showInlineCode: false,
-                            showListNumbers: true,
-                            showListBullets: true,
-                            showListCheck: true,
-                            showUndo: true,
-                            showRedo: true,
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(
+                            0xFF302B38,
+                          )
+                        : const Color(
+                            0xFFF3F0F6,
                           ),
-                        ),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Theme.of(
+                          context,
+                        )
+                            .colorScheme
+                            .outline
+                            .withOpacity(
+                              0.25,
+                            ),
                       ),
                     ),
                   ),
-                Focus(
-                  focusNode: editorFocusNode,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 160),
-                    curve: Curves.easeOut,
-                    constraints: BoxConstraints(
-                      // Before tapping, the editor behaves like the compact
-                      // writing bar from the earlier versions. Once tapped,
-                      // it opens up for comfortable writing.
-                      minHeight: isEditorFocused
-                          ? widget.minLines * 24.0
-                          : 48.0,
-                      maxHeight: isEditorFocused
-                          ? widget.maxLines * 38.0
-                          : 48.0,
-                    ),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: isEditorFocused ? 12 : 7,
-                    ),
-                    child: QuillEditor.basic(
+                  child:
+                      QuillSimpleToolbar(
                       controller: controller,
-                      config: QuillEditorConfig(
-                        placeholder: widget.hint,
-                        padding: EdgeInsets.zero,
-                        expands: false,
-                        autoFocus: false,
-                        scrollable: isEditorFocused,
-                        showCursor: true,
-                        enableInteractiveSelection: true,
-                        enableSelectionToolbar: true,
-                        onTapOutsideEnabled: false,
+                      config:
+                          const QuillSimpleToolbarConfig(
+                        multiRowsDisplay:
+                            true,
+                        showFontFamily:
+                            false,
+                        showFontSize:
+                            false,
+                        showAlignmentButtons:
+                            false,
+                        showHeaderStyle:
+                            false,
+                        showCodeBlock:
+                            false,
+                        showQuote:
+                            false,
+                        showIndent:
+                            false,
+                        showLink:
+                            false,
+                        showSearchButton:
+                            false,
+                        showDirection:
+                            false,
+                        showSubscript:
+                            false,
+                        showSuperscript:
+                            false,
+                        showClipboardCut:
+                            false,
+                        showClipboardCopy:
+                            false,
+                        showClipboardPaste:
+                            false,
+                        showColorButton:
+                            true,
+                        showBackgroundColorButton:
+                            true,
+                        showClearFormat:
+                            true,
+                        showBoldButton:
+                            true,
+                        showItalicButton:
+                            true,
+                        showUnderLineButton:
+                            true,
+                        showStrikeThrough:
+                            true,
+                        showInlineCode:
+                            false,
+                        showListNumbers:
+                            true,
+                        showListBullets:
+                            true,
+                        showListCheck:
+                            true,
+                        showUndo:
+                            true,
+                        showRedo:
+                            true,
                       ),
+                  ),
+                ),
+                Container(
+                  constraints: BoxConstraints(
+                    minHeight: widget.minLines * 24.0,
+                    maxHeight: widget.maxLines * 38.0,
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: QuillEditor.basic(
+                    controller: controller,
+                    config: QuillEditorConfig(
+                      placeholder: widget.hint,
+                      padding: EdgeInsets.zero,
+                      expands: false,
+                      autoFocus: false,
+                      scrollable: true,
+                      showCursor: true,
+                      enableInteractiveSelection: true,
+                      enableSelectionToolbar: true,
+                      // Keep focus/selection when using the toolbar,
+                      // especially on Flutter Web.
+                      onTapOutsideEnabled: false,
                     ),
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(
+            height: 4,
+          ),
+          Text(
+            'Select text, then use the A/color button for text color or the highlight button for highlighting.',
+            style: TextStyle(
+              fontSize: 11,
+              color: Theme.of(
+                context,
+              )
+                  .colorScheme
+                  .onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );
   }
+}
 
 // ============================================================
 // CHAPTER CARD
