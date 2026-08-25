@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -416,6 +417,9 @@ class _BitaniyaBibleStudyAppState extends State<BitaniyaBibleStudyApp> {
       darkTheme: darkTheme,
       themeMode: themeMode,
       localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
         FlutterQuillLocalizations.delegate,
       ],
       home: AppShell(
@@ -2729,8 +2733,7 @@ class _RichStudyFieldState
                         Axis.horizontal,
                     child:
                         QuillSimpleToolbar(
-                      controller:
-                          controller,
+                      controller: controller,
                       config:
                           const QuillSimpleToolbarConfig(
                         multiRowsDisplay:
@@ -2796,35 +2799,25 @@ class _RichStudyFieldState
                   ),
                 ),
                 Container(
-                  constraints:
-                      BoxConstraints(
-                    minHeight:
-                        widget.minLines * 24.0,
-                    maxHeight:
-                        widget.maxLines * 38.0,
+                  constraints: BoxConstraints(
+                    minHeight: widget.minLines * 24.0,
+                    maxHeight: widget.maxLines * 38.0,
                   ),
-                  padding:
-                      const EdgeInsets.all(
-                    12,
-                  ),
-                  child:
-                      QuillEditor.basic(
-                    controller:
-                        controller,
-                    config:
-                        QuillEditorConfig(
-                      placeholder:
-                          widget.hint,
-                      padding:
-                          EdgeInsets.zero,
-                      expands:
-                          false,
-                      autoFocus:
-                          false,
-                      scrollable:
-                          true,
-                      showCursor:
-                          true,
+                  padding: const EdgeInsets.all(12),
+                  child: QuillEditor.basic(
+                    controller: controller,
+                    config: QuillEditorConfig(
+                      placeholder: widget.hint,
+                      padding: EdgeInsets.zero,
+                      expands: false,
+                      autoFocus: false,
+                      scrollable: true,
+                      showCursor: true,
+                      enableInteractiveSelection: true,
+                      enableSelectionToolbar: true,
+                      // Keep focus/selection when using the toolbar,
+                      // especially on Flutter Web.
+                      onTapOutsideEnabled: false,
                     ),
                   ),
                 ),
@@ -3111,6 +3104,7 @@ class _ChapterCardState
     }
 
     return RichStudyField(
+      key: ValueKey('${widget.chapter.id}-$plainField'),
       label: label,
       hint: hint,
       plainText: plainValue,
