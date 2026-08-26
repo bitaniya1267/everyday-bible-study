@@ -2790,7 +2790,6 @@ class _RichStudyFieldState
                   iconButtonSelectedData: IconButtonData(
                     color: Theme.of(context).colorScheme.primary,
                     padding: EdgeInsets.zero,
-                    minimumSize: const Size(28, 28),
                     visualDensity: VisualDensity.compact,
                     style: ButtonStyle(
                       backgroundColor: WidgetStateProperty.all(
@@ -2818,7 +2817,6 @@ class _RichStudyFieldState
                   iconButtonUnselectedData: IconButtonData(
                     color: Theme.of(context).colorScheme.primary,
                     padding: EdgeInsets.zero,
-                    minimumSize: const Size(28, 28),
                     visualDensity: VisualDensity.compact,
                     style: ButtonStyle(
                       backgroundColor: WidgetStateProperty.resolveWith<Color?>(
