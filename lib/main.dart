@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -2613,7 +2614,11 @@ class _RichStudyFieldState
     extends State<RichStudyField> {
   late QuillController controller;
   late final FocusNode _fieldFocusNode;
+
   bool _showFormattingToolbar = false;
+  bool _toolbarPointerDown = false;
+  Timer? _hideToolbarTimer;
+  Timer? _saveTimer;
 
   @override
   void initState() {
@@ -2641,34 +2646,180 @@ class _RichStudyFieldState
 
   void _handleFocusChange() {
     if (!mounted) return;
-    final focused = _fieldFocusNode.hasFocus;
-    if (_showFormattingToolbar != focused) {
+
+    if (_fieldFocusNode.hasFocus) {
+      _hideToolbarTimer?.cancel();
+
+      if (!_showFormattingToolbar) {
+        setState(() {
+          _showFormattingToolbar = true;
+        });
+      }
+      return;
+    }
+
+    // Quill's toolbar can briefly take focus on Web. Do not
+    // immediately remove the toolbar while a formatting button
+    // is being pressed.
+    if (_toolbarPointerDown) return;
+
+    _hideToolbarTimer?.cancel();
+    _hideToolbarTimer = Timer(
+      const Duration(milliseconds: 250),
+      () {
+        if (!mounted ||
+            _fieldFocusNode.hasFocus ||
+            _toolbarPointerDown) {
+          return;
+        }
+
+        setState(() {
+          _showFormattingToolbar = false;
+        });
+      },
+    );
+  }
+
+  void _toolbarPointerDownHandler(PointerDownEvent event) {
+    _hideToolbarTimer?.cancel();
+    _toolbarPointerDown = true;
+
+    if (mounted && !_showFormattingToolbar) {
       setState(() {
-        _showFormattingToolbar = focused;
+        _showFormattingToolbar = true;
       });
     }
   }
 
+  void _toolbarPointerUpHandler(PointerUpEvent event) {
+    _toolbarPointerDown = false;
+
+    // Keep the editor focused after using a formatting button.
+    // This prevents the toolbar from disappearing and keeps the
+    // cursor/selection available for the next edit.
+    if (mounted && !_fieldFocusNode.hasFocus) {
+      Future<void>.delayed(
+        const Duration(milliseconds: 50),
+        () {
+          if (!mounted || _toolbarPointerDown) return;
+
+          _fieldFocusNode.requestFocus();
+
+          if (!_showFormattingToolbar) {
+            setState(() {
+              _showFormattingToolbar = true;
+            });
+          }
+        },
+      );
+    }
+  }
+
+  void _toolbarPointerCancelHandler(PointerCancelEvent event) {
+    _toolbarPointerDown = false;
+    _handleFocusChange();
+  }
+
   void _changed() {
     final plain = controller.document.toPlainText();
-
-    widget.onChanged(
-      RichFieldValue(
-        plainText: plain.trimRight(),
-        richText: documentToJson(
-          controller.document,
-        ),
+    final value = RichFieldValue(
+      plainText: plain.trimRight(),
+      richText: documentToJson(
+        controller.document,
       ),
+    );
+
+    // Do not rebuild the entire ChapterCard on every single
+    // keystroke. That was causing the editor to freeze briefly
+    // and could also interrupt the formatting toolbar.
+    _saveTimer?.cancel();
+    _saveTimer = Timer(
+      const Duration(milliseconds: 350),
+      () {
+        if (!mounted) return;
+        widget.onChanged(value);
+      },
     );
   }
 
   @override
   void dispose() {
+    _saveTimer?.cancel();
+    _hideToolbarTimer?.cancel();
+
     controller.removeListener(_changed);
     controller.dispose();
+
     _fieldFocusNode.removeListener(_handleFocusChange);
     _fieldFocusNode.dispose();
+
     super.dispose();
+  }
+
+  Widget _buildToolbar(BuildContext context, bool isDark) {
+    return Listener(
+      onPointerDown: _toolbarPointerDownHandler,
+      onPointerUp: _toolbarPointerUpHandler,
+      onPointerCancel: _toolbarPointerCancelHandler,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark
+              ? const Color(0xFF302B38)
+              : const Color(0xFFF3F0F6),
+          border: Border(
+            bottom: BorderSide(
+              color: Theme.of(context)
+                  .colorScheme
+                  .outline
+                  .withOpacity(0.25),
+            ),
+          ),
+        ),
+        child: QuillSimpleToolbar(
+          controller: controller,
+          config: const QuillSimpleToolbarConfig(
+            // One compact row greatly reduces the delay when the
+            // toolbar first appears, while keeping the formatting
+            // controls available.
+            multiRowsDisplay: false,
+
+            showFontFamily: false,
+            showFontSize: false,
+            showAlignmentButtons: false,
+            showHeaderStyle: false,
+            showCodeBlock: false,
+            showQuote: false,
+            showIndent: false,
+            showLink: false,
+            showSearchButton: false,
+            showDirection: false,
+            showSubscript: false,
+            showSuperscript: false,
+            showClipboardCut: false,
+            showClipboardCopy: false,
+            showClipboardPaste: false,
+
+            showColorButton: true,
+            showBackgroundColorButton: true,
+            showClearFormat: true,
+
+            showBoldButton: true,
+            showItalicButton: true,
+            showUnderLineButton: true,
+            showStrikeThrough: true,
+
+            showInlineCode: false,
+
+            showListNumbers: true,
+            showListBullets: true,
+            showListCheck: true,
+
+            showUndo: true,
+            showRedo: true,
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -2678,10 +2829,7 @@ class _RichStudyFieldState
             Brightness.dark;
 
     return Padding(
-      padding:
-          const EdgeInsets.only(
-        bottom: 14,
-      ),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment:
             CrossAxisAlignment.start,
@@ -2690,22 +2838,20 @@ class _RichStudyFieldState
             widget.label,
             style: TextStyle(
               fontSize: 15,
-              fontWeight:
-                  FontWeight.w700,
+              fontWeight: FontWeight.w700,
               color: Theme.of(context)
                   .colorScheme
                   .onSurface,
             ),
           ),
-          const SizedBox(
-            height: 7,
-          ),
+          const SizedBox(height: 7),
           Container(
             decoration: BoxDecoration(
               color: Theme.of(context)
                   .inputDecorationTheme
                   .fillColor,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius:
+                  BorderRadius.circular(16),
               border: Border.all(
                 color: Theme.of(context)
                     .colorScheme
@@ -2717,67 +2863,25 @@ class _RichStudyFieldState
             child: Column(
               children: [
                 if (_showFormattingToolbar)
-                  Container(
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF302B38)
-                          : const Color(0xFFF3F0F6),
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .outline
-                              .withOpacity(0.25),
-                        ),
-                      ),
-                    ),
-                    child: QuillSimpleToolbar(
-                      controller: controller,
-                      config: const QuillSimpleToolbarConfig(
-                        multiRowsDisplay: true,
-                        showFontFamily: false,
-                        showFontSize: false,
-                        showAlignmentButtons: false,
-                        showHeaderStyle: false,
-                        showCodeBlock: false,
-                        showQuote: false,
-                        showIndent: false,
-                        showLink: false,
-                        showSearchButton: false,
-                        showDirection: false,
-                        showSubscript: false,
-                        showSuperscript: false,
-                        showClipboardCut: false,
-                        showClipboardCopy: false,
-                        showClipboardPaste: false,
-                        showColorButton: true,
-                        showBackgroundColorButton: true,
-                        showClearFormat: true,
-                        showBoldButton: true,
-                        showItalicButton: true,
-                        showUnderLineButton: true,
-                        showStrikeThrough: true,
-                        showInlineCode: false,
-                        showListNumbers: true,
-                        showListBullets: true,
-                        showListCheck: true,
-                        showUndo: true,
-                        showRedo: true,
-                      ),
-                    ),
-                  ),
+                  _buildToolbar(context, isDark),
+
                 Container(
                   constraints: BoxConstraints(
                     minHeight: widget.minLines * 20.0,
                     maxHeight: widget.maxLines * 30.0,
                   ),
-                  padding: const EdgeInsets.all(12),
+                  padding:
+                      const EdgeInsets.all(12),
                   child: QuillEditor.basic(
                     controller: controller,
                     focusNode: _fieldFocusNode,
                     config: QuillEditorConfig(
-                      // Keep the study question invisible until the field is focused.
-                      placeholder: _showFormattingToolbar ? widget.hint : null,
+                      // The study question/hint is only shown while
+                      // this writing field is active.
+                      placeholder:
+                          _showFormattingToolbar
+                              ? widget.hint
+                              : null,
                       padding: EdgeInsets.zero,
                       expands: false,
                       autoFocus: false,
@@ -2785,7 +2889,10 @@ class _RichStudyFieldState
                       showCursor: true,
                       enableInteractiveSelection: true,
                       enableSelectionToolbar: true,
-                      onTapOutsideEnabled: true,
+
+                      // Do not let Quill's outside-tap handling steal
+                      // focus when a toolbar button is pressed.
+                      onTapOutsideEnabled: false,
                     ),
                   ),
                 ),
@@ -2797,6 +2904,7 @@ class _RichStudyFieldState
     );
   }
 }
+
 
 // ============================================================
 // CHAPTER CARD
