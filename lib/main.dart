@@ -2611,6 +2611,8 @@ class RichFieldValue {
 
 class _RichStudyFieldState extends State<RichStudyField> {
   late QuillController controller;
+  late FocusNode _editorFocusNode;
+
   bool _showToolbar = false;
 
   @override
@@ -2631,6 +2633,8 @@ class _RichStudyFieldState extends State<RichStudyField> {
       ),
     );
 
+    _editorFocusNode = FocusNode();
+
     controller.addListener(_changed);
   }
 
@@ -2647,26 +2651,19 @@ class _RichStudyFieldState extends State<RichStudyField> {
     );
   }
 
-  void _showFormattingToolbar() {
-    if (!_showToolbar && mounted) {
-      setState(() {
-        _showToolbar = true;
-      });
-    }
-  }
+  void _setToolbarVisible(bool visible) {
+    if (!mounted || _showToolbar == visible) return;
 
-  void _hideFormattingToolbar() {
-    if (_showToolbar && mounted) {
-      setState(() {
-        _showToolbar = false;
-      });
-    }
+    setState(() {
+      _showToolbar = visible;
+    });
   }
 
   @override
   void dispose() {
     controller.removeListener(_changed);
     controller.dispose();
+    _editorFocusNode.dispose();
     super.dispose();
   }
 
@@ -2689,8 +2686,9 @@ class _RichStudyFieldState extends State<RichStudyField> {
             ),
           ),
           const SizedBox(height: 7),
-          TapRegion(
-            onTapOutside: (_) => _hideFormattingToolbar(),
+          Focus(
+            focusNode: _editorFocusNode,
+            onFocusChange: _setToolbarVisible,
             child: Container(
               decoration: BoxDecoration(
                 color: Theme.of(context)
@@ -2706,9 +2704,13 @@ class _RichStudyFieldState extends State<RichStudyField> {
               ),
               clipBehavior: Clip.antiAlias,
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
+                  // The toolbar is completely removed from the widget tree
+                  // until the writing area receives focus.
                   if (_showToolbar)
                     Container(
+                      height: 42,
                       decoration: BoxDecoration(
                         color: isDark
                             ? const Color(0xFF302B38)
@@ -2760,31 +2762,27 @@ class _RichStudyFieldState extends State<RichStudyField> {
                         ),
                       ),
                     ),
-                  Listener(
-                    behavior: HitTestBehavior.translucent,
-                    onPointerDown: (_) => _showFormattingToolbar(),
-                    child: Container(
-                      constraints: BoxConstraints(
-                        minHeight: 86,
-                        maxHeight: 180,
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 9,
-                      ),
-                      child: QuillEditor.basic(
-                        controller: controller,
-                        config: QuillEditorConfig(
-                          placeholder: widget.hint,
-                          padding: EdgeInsets.zero,
-                          expands: false,
-                          autoFocus: false,
-                          scrollable: true,
-                          showCursor: true,
-                          enableInteractiveSelection: true,
-                          enableSelectionToolbar: true,
-                          onTapOutsideEnabled: false,
+
+                  // Short writing area. No explanatory text is shown.
+                  SizedBox(
+                    height: 104,
+                    child: QuillEditor.basic(
+                      controller: controller,
+                      config: QuillEditorConfig(
+                        placeholder: widget.hint,
+                        padding: const EdgeInsets.fromLTRB(
+                          12,
+                          9,
+                          12,
+                          9,
                         ),
+                        expands: false,
+                        autoFocus: false,
+                        scrollable: true,
+                        showCursor: true,
+                        enableInteractiveSelection: true,
+                        enableSelectionToolbar: true,
+                        onTapOutsideEnabled: true,
                       ),
                     ),
                   ),
