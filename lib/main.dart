@@ -2574,12 +2574,9 @@ class _DailyStudyEditorBodyState
 class RichStudyField extends StatefulWidget {
   final String label;
   final String hint;
-
   final String plainText;
   final String richText;
-
   final ValueChanged<RichFieldValue> onChanged;
-
   final int minLines;
   final int maxLines;
 
@@ -2610,14 +2607,14 @@ class RichFieldValue {
 
 class _RichStudyFieldState extends State<RichStudyField> {
   late QuillController controller;
-
-  // The field starts completely clean. The editor and toolbar only appear
-  // after the user taps the writing area.
-  bool _isActive = false;
+  late final FocusNode _fieldFocusNode;
+  bool _showToolbar = false;
 
   @override
   void initState() {
     super.initState();
+
+    _fieldFocusNode = FocusNode(debugLabel: 'RichStudyField');
 
     final document = documentFromStoredValue(
       widget.richText,
@@ -2645,20 +2642,18 @@ class _RichStudyFieldState extends State<RichStudyField> {
     );
   }
 
-  void _activate() {
-    if (!mounted || _isActive) return;
-    setState(() => _isActive = true);
-  }
-
-  void _deactivate() {
-    if (!mounted || !_isActive) return;
-    setState(() => _isActive = false);
+  void _handleFocusChange(bool hasFocus) {
+    if (!mounted) return;
+    setState(() {
+      _showToolbar = hasFocus;
+    });
   }
 
   @override
   void dispose() {
     controller.removeListener(_changed);
     controller.dispose();
+    _fieldFocusNode.dispose();
     super.dispose();
   }
 
@@ -2666,9 +2661,10 @@ class _RichStudyFieldState extends State<RichStudyField> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // A compact writing area. It stays the same size whether active or not,
-    // so the page does not jump around when the toolbar is opened.
-    const double writingHeight = 104;
+    // Keep every writing field compact. The editor can still scroll internally
+    // when the user writes more than fits in the visible area.
+    final minHeight = (widget.minLines * 22.0).clamp(64.0, 82.0).toDouble();
+    final maxHeight = (widget.maxLines * 26.0).clamp(120.0, 170.0).toDouble();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -2684,14 +2680,12 @@ class _RichStudyFieldState extends State<RichStudyField> {
             ),
           ),
           const SizedBox(height: 7),
-          TapRegion(
-            onTapInside: (_) => _activate(),
-            onTapOutside: (_) => _deactivate(),
+          Focus(
+            focusNode: _fieldFocusNode,
+            onFocusChange: _handleFocusChange,
             child: Container(
               decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .inputDecorationTheme
-                    .fillColor,
+                color: Theme.of(context).inputDecorationTheme.fillColor,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: Theme.of(context)
@@ -2704,11 +2698,10 @@ class _RichStudyFieldState extends State<RichStudyField> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Toolbar is not built at all until the writing area is
-                  // activated. All formatting tools remain available.
-                  if (_isActive)
+                  // The toolbar is completely absent until this field has
+                  // focus. This prevents the empty toolbar strip from showing.
+                  if (_showToolbar)
                     Container(
-                      height: 42,
                       decoration: BoxDecoration(
                         color: isDark
                             ? const Color(0xFF302B38)
@@ -2722,73 +2715,63 @@ class _RichStudyFieldState extends State<RichStudyField> {
                           ),
                         ),
                       ),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: QuillSimpleToolbar(
-                          controller: controller,
-                          config: const QuillSimpleToolbarConfig(
-                            multiRowsDisplay: false,
-                            showFontFamily: false,
-                            showFontSize: false,
-                            showAlignmentButtons: false,
-                            showHeaderStyle: false,
-                            showCodeBlock: false,
-                            showQuote: false,
-                            showIndent: false,
-                            showLink: false,
-                            showSearchButton: false,
-                            showDirection: false,
-                            showSubscript: false,
-                            showSuperscript: false,
-                            showClipboardCut: false,
-                            showClipboardCopy: false,
-                            showClipboardPaste: false,
-                            showColorButton: true,
-                            showBackgroundColorButton: true,
-                            showClearFormat: true,
-                            showBoldButton: true,
-                            showItalicButton: true,
-                            showUnderLineButton: true,
-                            showStrikeThrough: true,
-                            showInlineCode: false,
-                            showListNumbers: true,
-                            showListBullets: true,
-                            showListCheck: true,
-                            showUndo: true,
-                            showRedo: true,
-                          ),
+                      child: QuillSimpleToolbar(
+                        controller: controller,
+                        config: const QuillSimpleToolbarConfig(
+                          multiRowsDisplay: false,
+                          showFontFamily: false,
+                          showFontSize: false,
+                          showAlignmentButtons: false,
+                          showHeaderStyle: false,
+                          showCodeBlock: false,
+                          showQuote: false,
+                          showIndent: false,
+                          showLink: false,
+                          showSearchButton: false,
+                          showDirection: false,
+                          showSubscript: false,
+                          showSuperscript: false,
+                          showClipboardCut: false,
+                          showClipboardCopy: false,
+                          showClipboardPaste: false,
+                          showColorButton: true,
+                          showBackgroundColorButton: true,
+                          showClearFormat: true,
+                          showBoldButton: true,
+                          showItalicButton: true,
+                          showUnderLineButton: true,
+                          showStrikeThrough: true,
+                          showInlineCode: false,
+                          showListNumbers: true,
+                          showListBullets: true,
+                          showListCheck: true,
+                          showUndo: true,
+                          showRedo: true,
                         ),
                       ),
                     ),
-
-                  // When inactive the editor itself is hidden, leaving a
-                  // clean blank writing area. Tapping the area activates it.
-                  SizedBox(
-                    height: writingHeight,
-                    child: _isActive
-                        ? QuillEditor.basic(
-                            controller: controller,
-                            config: QuillEditorConfig(
-                              placeholder: widget.hint,
-                              padding: const EdgeInsets.fromLTRB(
-                                12,
-                                9,
-                                12,
-                                9,
-                              ),
-                              expands: false,
-                              autoFocus: true,
-                              scrollable: true,
-                              showCursor: true,
-                              enableInteractiveSelection: true,
-                              enableSelectionToolbar: true,
-                              onTapOutsideEnabled: true,
-                            ),
-                          )
-                        : InkWell(
-                            onTap: _activate,
-                            child: const SizedBox.expand(),
-                          ),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: minHeight,
+                      maxHeight: maxHeight,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                      child: QuillEditor.basic(
+                        controller: controller,
+                        config: QuillEditorConfig(
+                          placeholder: widget.hint,
+                          padding: EdgeInsets.zero,
+                          expands: false,
+                          autoFocus: false,
+                          scrollable: true,
+                          showCursor: true,
+                          enableInteractiveSelection: true,
+                          enableSelectionToolbar: true,
+                          onTapOutsideEnabled: false,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
