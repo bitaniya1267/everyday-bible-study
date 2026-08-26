@@ -518,6 +518,9 @@ class ChapterEntry {
   String characterActionsRich;
   String characterLessonsRich;
 
+  bool bookmarked;
+  bool favorite;
+
   ChapterEntry({
     required this.id,
     required this.reference,
@@ -547,6 +550,8 @@ class ChapterEntry {
     this.characterTraitsRich = '',
     this.characterActionsRich = '',
     this.characterLessonsRich = '',
+    this.bookmarked = false,
+    this.favorite = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -581,6 +586,8 @@ class ChapterEntry {
       'characterTraitsRich': characterTraitsRich,
       'characterActionsRich': characterActionsRich,
       'characterLessonsRich': characterLessonsRich,
+      'bookmarked': bookmarked,
+      'favorite': favorite,
     };
   }
 
@@ -625,6 +632,8 @@ class ChapterEntry {
           json['characterActionsRich']?.toString() ?? '',
       characterLessonsRich:
           json['characterLessonsRich']?.toString() ?? '',
+      bookmarked: json['bookmarked'] == true,
+      favorite: json['favorite'] == true,
     );
   }
 }
@@ -895,6 +904,68 @@ class ReadingStorage {
       jsonEncode(jsonData),
     );
   }
+}
+
+// ============================================================
+// STUDY HELPERS
+// ============================================================
+
+String prettyStudyDate(String key) {
+  try {
+    final d = DateTime.parse(key);
+    return '${d.day}/${d.month}/${d.year}';
+  } catch (_) {
+    return key;
+  }
+}
+
+String chapterSearchText(ChapterEntry c) {
+  return [
+    c.reference,
+    c.keyVerse,
+    c.summary,
+    c.observations,
+    c.meaning,
+    c.lessons,
+    c.application,
+    c.questions,
+    c.prayer,
+    c.characterName,
+    c.characterWho,
+    c.characterTraits,
+    c.characterActions,
+    c.characterLessons,
+  ].join(' ').toLowerCase();
+}
+
+int calculateStudyStreak(List<StudyDay> days) {
+  final keys = days.map((d) => d.dateKey).where((x) => x.isNotEmpty).toSet();
+  if (keys.isEmpty) return 0;
+  var date = DateTime.now();
+  String key(DateTime d) => ReadingStorage.dateKey(d);
+  if (!keys.contains(key(date))) {
+    date = date.subtract(const Duration(days: 1));
+  }
+  var streak = 0;
+  while (keys.contains(key(date))) {
+    streak++;
+    date = date.subtract(const Duration(days: 1));
+  }
+  return streak;
+}
+
+List<Map<String, dynamic>> studySearchResults(List<StudyDay> days, String query) {
+  final q = query.trim().toLowerCase();
+  if (q.isEmpty) return [];
+  final results = <Map<String, dynamic>>[];
+  for (final day in days) {
+    for (final chapter in day.chapters) {
+      if (chapterSearchText(chapter).contains(q)) {
+        results.add({'day': day, 'chapter': chapter});
+      }
+    }
+  }
+  return results;
 }
 
 // ============================================================
@@ -1214,6 +1285,53 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _showStudyExport(BuildContext context) async {
+    final sorted = [...widget.days]..sort((a, b) => b.dateKey.compareTo(a.dateKey));
+    final buffer = StringBuffer('BITANIYA BIBLE STUDY\n\n');
+    for (final day in sorted) {
+      buffer.writeln('DATE: ${prettyStudyDate(day.dateKey)}');
+      for (final c in day.chapters) {
+        buffer.writeln('\n${c.reference.isEmpty ? 'Chapter' : c.reference}');
+        final fields = <String, String>{
+          'Key verse': c.keyVerse,
+          'Summary': c.summary,
+          'Observations': c.observations,
+          'Meaning': c.meaning,
+          'Lessons': c.lessons,
+          'Application': c.application,
+          'Questions': c.questions,
+          'Prayer': c.prayer,
+          'Character': c.characterName,
+          'Character lessons': c.characterLessons,
+        };
+        for (final e in fields.entries) {
+          if (e.value.trim().isNotEmpty) buffer.writeln('${e.key}: ${e.value.trim()}');
+        }
+      }
+      buffer.writeln('\n----------------------------------------\n');
+    }
+    final text = buffer.toString();
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Export your studies'),
+        content: SizedBox(width: 650, child: SingleChildScrollView(child: SelectableText(text))),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Close')),
+          FilledButton.icon(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: text));
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
+              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Study export copied to clipboard.')));
+            },
+            icon: const Icon(Icons.copy),
+            label: const Text('Copy'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final sorted = [
@@ -1279,8 +1397,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: _TopProgressItem(
                         icon: Icons.menu_book,
-                        value:
-                            '$studyChapterCount',
+                        value: '$studyChapterCount',
                       ),
                     ),
                     Container(
@@ -1302,9 +1419,51 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(
-                  height: 18,
+                const SizedBox(height: 14),
+                _DashboardQuickActions(
+                  days: widget.days,
+                  onSearch: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => StudySearchScreen(days: widget.days))),
+                  onBookmarks: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => StudyLibraryScreen(days: widget.days, favoritesOnly: false))),
+                  onFavorites: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => StudyLibraryScreen(days: widget.days, favoritesOnly: true))),
+                  onCalendar: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => StudyCalendarScreen(days: widget.days))),
+                  onCharacters: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => CharacterLibraryScreen(days: widget.days))),
+                  onExport: () => _showStudyExport(context),
                 ),
+                const SizedBox(height: 18),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.local_fire_department_outlined),
+                    title: const Text('Study streak', style: TextStyle(fontWeight: FontWeight.w700)),
+                    subtitle: Text('${calculateStudyStreak(widget.days)} consecutive day${calculateStudyStreak(widget.days) == 1 ? '' : 's'}'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => StudyCalendarScreen(days: widget.days))),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Expanded(child: _StatMini(label: 'Study days', value: '$studyDays')),
+                        Expanded(child: _StatMini(label: 'Chapters', value: '$studyChapterCount')),
+                        Expanded(child: _StatMini(label: 'Streak', value: '${calculateStudyStreak(widget.days)}')),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (sorted.isNotEmpty)
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.play_circle_outline),
+                      title: const Text('Continue your latest study', style: TextStyle(fontWeight: FontWeight.w700)),
+                      subtitle: Text('${prettyStudyDate(sorted.first.dateKey)} • ${sorted.first.chapters.length} chapter${sorted.first.chapters.length == 1 ? '' : 's'}'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => widget.onOpenDay(sorted.first),
+                    ),
+                  ),
+                const SizedBox(height: 12),
                 Card(
                   clipBehavior:
                       Clip.antiAlias,
@@ -1968,6 +2127,316 @@ class SettingsScreen
       ),
     );
   }
+}
+
+class _StatMini extends StatelessWidget {
+  final String label;
+  final String value;
+  const _StatMini({required this.label, required this.value});
+  @override
+  Widget build(BuildContext context) => Column(children: [Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)), const SizedBox(height: 3), Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))]);
+}
+
+// ============================================================
+// DASHBOARD QUICK ACTIONS
+// ============================================================
+
+class _DashboardQuickActions extends StatelessWidget {
+  final List<StudyDay> days;
+  final VoidCallback onSearch;
+  final VoidCallback onBookmarks;
+  final VoidCallback onFavorites;
+  final VoidCallback onCalendar;
+  final VoidCallback onCharacters;
+  final VoidCallback onExport;
+
+  const _DashboardQuickActions({required this.days, required this.onSearch, required this.onBookmarks, required this.onFavorites, required this.onCalendar, required this.onCharacters, required this.onExport});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _quick(context, Icons.search, 'Search', onSearch),
+            _quick(context, Icons.bookmark_border, 'Bookmarks', onBookmarks),
+            _quick(context, Icons.star_border, 'Favorites', onFavorites),
+            _quick(context, Icons.calendar_month, 'Calendar', onCalendar),
+            _quick(context, Icons.person_outline, 'Characters', onCharacters),
+            _quick(context, Icons.ios_share_outlined, 'Export', onExport),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _quick(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+    return ActionChip(avatar: Icon(icon, size: 18), label: Text(label), onPressed: onTap);
+  }
+}
+
+// ============================================================
+// STUDY SEARCH
+// ============================================================
+
+class StudySearchScreen extends StatefulWidget {
+  final List<StudyDay> days;
+  const StudySearchScreen({super.key, required this.days});
+  @override State<StudySearchScreen> createState() => _StudySearchScreenState();
+}
+
+class _StudySearchScreenState extends State<StudySearchScreen> {
+  final controller = TextEditingController();
+  String query = '';
+  @override
+  void dispose() { controller.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    final results = studySearchResults(widget.days, query);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Search your studies')),
+      body: Column(children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+          child: TextField(
+            controller: controller,
+            autofocus: true,
+            onChanged: (v) => setState(() => query = v),
+            decoration: InputDecoration(
+              hintText: 'Search notes, verses, people, questions…',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: query.isEmpty ? null : IconButton(icon: const Icon(Icons.clear), onPressed: () { controller.clear(); setState(() => query = ''); }),
+            ),
+          ),
+        ),
+        Expanded(
+          child: query.trim().isEmpty
+              ? const Center(child: Text('Search across all your saved studies.'))
+              : results.isEmpty
+                  ? const Center(child: Text('No matching studies found.'))
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                      itemCount: results.length,
+                      itemBuilder: (_, i) {
+                        final day = results[i]['day'] as StudyDay;
+                        final chapter = results[i]['chapter'] as ChapterEntry;
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          child: ExpansionTile(
+                            leading: Icon(chapter.favorite ? Icons.star : Icons.menu_book_outlined),
+                            title: Text(chapter.reference.isEmpty ? 'Chapter ${i + 1}' : chapter.reference, style: const TextStyle(fontWeight: FontWeight.w700)),
+                            subtitle: Text(prettyStudyDate(day.dateKey)),
+                            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            children: _resultFields(chapter),
+                          ),
+                        );
+                      },
+                    ),
+        ),
+      ]),
+    );
+  }
+
+  List<Widget> _resultFields(ChapterEntry c) {
+    final items = <String, String>{
+      'Key verse': c.keyVerse,
+      'Summary': c.summary,
+      'Observations': c.observations,
+      'Meaning': c.meaning,
+      'Lessons': c.lessons,
+      'Application': c.application,
+      'Questions': c.questions,
+      'Prayer': c.prayer,
+      'Character': c.characterName,
+      'Character lessons': c.characterLessons,
+    };
+    return items.entries.where((e) => e.value.trim().isNotEmpty).map((e) => Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Align(alignment: Alignment.centerLeft, child: Text('${e.key}:\n${e.value}')),
+    )).toList();
+  }
+}
+
+// ============================================================
+// BOOKMARKS / FAVORITES
+// ============================================================
+
+class StudyLibraryScreen extends StatefulWidget {
+  final List<StudyDay> days;
+  final bool favoritesOnly;
+  const StudyLibraryScreen({super.key, required this.days, required this.favoritesOnly});
+  @override State<StudyLibraryScreen> createState() => _StudyLibraryScreenState();
+}
+
+class _StudyLibraryScreenState extends State<StudyLibraryScreen> {
+  @override
+  Widget build(BuildContext context) {
+    final entries = <Map<String, dynamic>>[];
+    for (final day in widget.days) {
+      for (final c in day.chapters) {
+        if (widget.favoritesOnly ? c.favorite : c.bookmarked) entries.add({'day': day, 'chapter': c});
+      }
+    }
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.favoritesOnly ? 'Favorites' : 'Bookmarks')),
+      body: entries.isEmpty
+          ? Center(child: _EmptyCard(icon: widget.favoritesOnly ? Icons.star_border : Icons.bookmark_border, title: widget.favoritesOnly ? 'No favorites yet' : 'No bookmarks yet', message: widget.favoritesOnly ? 'Favorite studies you want to return to.' : 'Bookmark chapters you want to find quickly.'))
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: entries.length,
+              itemBuilder: (_, i) {
+                final day = entries[i]['day'] as StudyDay;
+                final c = entries[i]['chapter'] as ChapterEntry;
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  child: ListTile(
+                    leading: Icon(widget.favoritesOnly ? Icons.star : Icons.bookmark),
+                    title: Text(c.reference.isEmpty ? 'Untitled chapter' : c.reference, style: const TextStyle(fontWeight: FontWeight.w700)),
+                    subtitle: Text('${prettyStudyDate(day.dateKey)}${c.summary.trim().isEmpty ? '' : '\n${c.summary.trim()}'}', maxLines: 3, overflow: TextOverflow.ellipsis),
+                    isThreeLine: true,
+                    trailing: IconButton(
+                      tooltip: widget.favoritesOnly ? 'Remove favorite' : 'Remove bookmark',
+                      icon: const Icon(Icons.close),
+                      onPressed: () => setState(() { if (widget.favoritesOnly) { c.favorite = false; } else { c.bookmarked = false; } StudyStorage.saveDays(widget.days); }),
+                    ),
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
+// ============================================================
+// CHARACTER LIBRARY
+// ============================================================
+
+class CharacterLibraryScreen extends StatelessWidget {
+  final List<StudyDay> days;
+  const CharacterLibraryScreen({super.key, required this.days});
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = <Map<String, dynamic>>[];
+    final seen = <String>{};
+    for (final day in days) {
+      for (final c in day.chapters) {
+        final name = c.characterName.trim();
+        if (name.isEmpty) continue;
+        final key = name.toLowerCase();
+        if (seen.add(key)) entries.add({'name': name, 'chapter': c, 'date': day.dateKey});
+      }
+    }
+    entries.sort((a, b) => (a['name'] as String).toLowerCase().compareTo((b['name'] as String).toLowerCase()));
+    return Scaffold(
+      appBar: AppBar(title: const Text('Character study library')),
+      body: entries.isEmpty
+          ? const _EmptyCard(icon: Icons.person_outline, title: 'No characters yet', message: 'Add a character name in Character Study and it will appear here.')
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: entries.length,
+              itemBuilder: (_, i) {
+                final c = entries[i]['chapter'] as ChapterEntry;
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  child: ExpansionTile(
+                    leading: const Icon(Icons.person_outline),
+                    title: Text(entries[i]['name'] as String, style: const TextStyle(fontWeight: FontWeight.w700)),
+                    subtitle: Text(c.reference.isEmpty ? 'Bible character' : c.reference),
+                    childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    children: [
+                      if (c.characterWho.trim().isNotEmpty) Text('Who: ${c.characterWho}'),
+                      if (c.characterTraits.trim().isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text('Traits: ${c.characterTraits}')),
+                      if (c.characterActions.trim().isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text('Actions: ${c.characterActions}')),
+                      if (c.characterLessons.trim().isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text('Lessons: ${c.characterLessons}')),
+                    ],
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
+// ============================================================
+// STUDY CALENDAR
+// ============================================================
+
+class StudyCalendarScreen extends StatefulWidget {
+  final List<StudyDay> days;
+  const StudyCalendarScreen({super.key, required this.days});
+  @override State<StudyCalendarScreen> createState() => _StudyCalendarScreenState();
+}
+
+class _StudyCalendarScreenState extends State<StudyCalendarScreen> {
+  DateTime month = DateTime(DateTime.now().year, DateTime.now().month);
+  DateTime? selected;
+
+  bool hasStudy(DateTime d) => widget.days.any((x) => x.dateKey == ReadingStorage.dateKey(d));
+  StudyDay? dayFor(DateTime d) {
+    final key = ReadingStorage.dateKey(d);
+    for (final day in widget.days) { if (day.dateKey == key) return day; }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final first = DateTime(month.year, month.month, 1);
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    final leading = first.weekday - 1;
+    final cells = leading + daysInMonth;
+    final selectedDay = selected == null ? null : dayFor(selected!);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Study calendar')),
+      body: ListView(padding: const EdgeInsets.all(16), children: [
+        Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(children: [
+          Row(children: [
+            IconButton(onPressed: () => setState(() => month = DateTime(month.year, month.month - 1)), icon: const Icon(Icons.chevron_left)),
+            Expanded(child: Center(child: Text('${_monthName(month.month)} ${month.year}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)))),
+            IconButton(onPressed: () => setState(() => month = DateTime(month.year, month.month + 1)), icon: const Icon(Icons.chevron_right)),
+          ]),
+          const SizedBox(height: 8),
+          Row(children: ['M','T','W','T','F','S','S'].map((x) => Expanded(child: Center(child: Text(x, style: const TextStyle(fontWeight: FontWeight.bold)))).toList()),
+          const SizedBox(height: 8),
+          GridView.builder(
+            shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), itemCount: cells,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7, mainAxisSpacing: 6, crossAxisSpacing: 6),
+            itemBuilder: (_, index) {
+              if (index < leading) return const SizedBox();
+              final d = DateTime(month.year, month.month, index - leading + 1);
+              final studied = hasStudy(d);
+              final isSelected = selected != null && ReadingStorage.dateKey(selected!) == ReadingStorage.dateKey(d);
+              return InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => setState(() => selected = d),
+                child: Container(
+                  decoration: BoxDecoration(color: isSelected ? Theme.of(context).colorScheme.primary : studied ? Theme.of(context).colorScheme.primaryContainer : null, borderRadius: BorderRadius.circular(12), border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(.25))),
+                  child: Center(child: Text('${d.day}', style: TextStyle(fontWeight: studied || isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? Theme.of(context).colorScheme.onPrimary : null))),
+                ),
+              );
+            },
+          ),
+        ]))),
+        const SizedBox(height: 14),
+        if (selectedDay != null)
+          Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(prettyStudyDate(selected!.toIso8601String().substring(0,10)), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text('${selectedDay.chapters.length} chapter${selectedDay.chapters.length == 1 ? '' : 's'} studied'),
+            const SizedBox(height: 8),
+            ...selectedDay.chapters.map((c) => ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.menu_book_outlined), title: Text(c.reference.isEmpty ? 'Untitled chapter' : c.reference), subtitle: Text(c.summary.isEmpty ? 'No summary' : c.summary, maxLines: 2, overflow: TextOverflow.ellipsis))),
+          ])))
+        else
+          const _EmptyCard(icon: Icons.touch_app_outlined, title: 'Choose a day', message: 'Tap a date to see what you studied.'),
+      ]),
+    );
+  }
+
+  String _monthName(int m) => const ['January','February','March','April','May','June','July','August','September','October','November','December'][m - 1];
 }
 
 // ============================================================
@@ -3258,12 +3727,29 @@ class _ChapterCardState
         ),
         title: Text(
           'Chapter ${widget.number}',
-          style:
-              const TextStyle(
-            fontWeight:
-                FontWeight.bold,
-            fontSize: 18,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              tooltip: widget.chapter.bookmarked ? 'Remove bookmark' : 'Bookmark',
+              onPressed: () {
+                setState(() => widget.chapter.bookmarked = !widget.chapter.bookmarked);
+                widget.onChanged();
+              },
+              icon: Icon(widget.chapter.bookmarked ? Icons.bookmark : Icons.bookmark_border),
+            ),
+            IconButton(
+              tooltip: widget.chapter.favorite ? 'Remove favorite' : 'Favorite',
+              onPressed: () {
+                setState(() => widget.chapter.favorite = !widget.chapter.favorite);
+                widget.onChanged();
+              },
+              icon: Icon(widget.chapter.favorite ? Icons.star : Icons.star_border),
+            ),
+            const Icon(Icons.expand_more),
+          ],
         ),
         childrenPadding:
             const EdgeInsets
