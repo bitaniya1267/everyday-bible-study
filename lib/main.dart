@@ -2574,9 +2574,12 @@ class _DailyStudyEditorBodyState
 class RichStudyField extends StatefulWidget {
   final String label;
   final String hint;
+
   final String plainText;
   final String richText;
+
   final ValueChanged<RichFieldValue> onChanged;
+
   final int minLines;
   final int maxLines;
 
@@ -2592,7 +2595,8 @@ class RichStudyField extends StatefulWidget {
   });
 
   @override
-  State<RichStudyField> createState() => _RichStudyFieldState();
+  State<RichStudyField> createState() =>
+      _RichStudyFieldState();
 }
 
 class RichFieldValue {
@@ -2605,16 +2609,18 @@ class RichFieldValue {
   });
 }
 
-class _RichStudyFieldState extends State<RichStudyField> {
+class _RichStudyFieldState
+    extends State<RichStudyField> {
   late QuillController controller;
   late final FocusNode _fieldFocusNode;
-  bool _showToolbar = false;
+  bool _showFormattingToolbar = false;
 
   @override
   void initState() {
     super.initState();
 
-    _fieldFocusNode = FocusNode(debugLabel: 'RichStudyField');
+    _fieldFocusNode = FocusNode();
+    _fieldFocusNode.addListener(_handleFocusChange);
 
     final document = documentFromStoredValue(
       widget.richText,
@@ -2624,11 +2630,23 @@ class _RichStudyFieldState extends State<RichStudyField> {
     controller = QuillController(
       document: document,
       selection: TextSelection.collapsed(
-        offset: document.length > 0 ? document.length - 1 : 0,
+        offset: document.length > 0
+            ? document.length - 1
+            : 0,
       ),
     );
 
     controller.addListener(_changed);
+  }
+
+  void _handleFocusChange() {
+    if (!mounted) return;
+    final focused = _fieldFocusNode.hasFocus;
+    if (_showFormattingToolbar != focused) {
+      setState(() {
+        _showFormattingToolbar = focused;
+      });
+    }
   }
 
   void _changed() {
@@ -2637,144 +2655,141 @@ class _RichStudyFieldState extends State<RichStudyField> {
     widget.onChanged(
       RichFieldValue(
         plainText: plain.trimRight(),
-        richText: documentToJson(controller.document),
+        richText: documentToJson(
+          controller.document,
+        ),
       ),
     );
-  }
-
-  void _handleFocusChange(bool hasFocus) {
-    if (!mounted) return;
-    setState(() {
-      _showToolbar = hasFocus;
-    });
   }
 
   @override
   void dispose() {
     controller.removeListener(_changed);
     controller.dispose();
+    _fieldFocusNode.removeListener(_handleFocusChange);
     _fieldFocusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Keep every writing field compact. The editor can still scroll internally
-    // when the user writes more than fits in the visible area.
-    final minHeight = (widget.minLines * 22.0).clamp(64.0, 82.0).toDouble();
-    final maxHeight = (widget.maxLines * 26.0).clamp(120.0, 170.0).toDouble();
+    final isDark =
+        Theme.of(context).brightness ==
+            Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding:
+          const EdgeInsets.only(
+        bottom: 14,
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Text(
             widget.label,
             style: TextStyle(
               fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight:
+                  FontWeight.w700,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface,
             ),
           ),
-          const SizedBox(height: 7),
-          Focus(
-            focusNode: _fieldFocusNode,
-            onFocusChange: _handleFocusChange,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).inputDecorationTheme.fillColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .outline
-                      .withOpacity(0.35),
-                ),
+          const SizedBox(
+            height: 7,
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context)
+                  .inputDecorationTheme
+                  .fillColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Theme.of(context)
+                    .colorScheme
+                    .outline
+                    .withOpacity(0.35),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // The toolbar is completely absent until this field has
-                  // focus. This prevents the empty toolbar strip from showing.
-                  if (_showToolbar)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF302B38)
-                            : const Color(0xFFF3F0F6),
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .outline
-                                .withOpacity(0.25),
-                          ),
-                        ),
-                      ),
-                      child: QuillSimpleToolbar(
-                        controller: controller,
-                        config: const QuillSimpleToolbarConfig(
-                          multiRowsDisplay: false,
-                          showFontFamily: false,
-                          showFontSize: false,
-                          showAlignmentButtons: false,
-                          showHeaderStyle: false,
-                          showCodeBlock: false,
-                          showQuote: false,
-                          showIndent: false,
-                          showLink: false,
-                          showSearchButton: false,
-                          showDirection: false,
-                          showSubscript: false,
-                          showSuperscript: false,
-                          showClipboardCut: false,
-                          showClipboardCopy: false,
-                          showClipboardPaste: false,
-                          showColorButton: true,
-                          showBackgroundColorButton: true,
-                          showClearFormat: true,
-                          showBoldButton: true,
-                          showItalicButton: true,
-                          showUnderLineButton: true,
-                          showStrikeThrough: true,
-                          showInlineCode: false,
-                          showListNumbers: true,
-                          showListBullets: true,
-                          showListCheck: true,
-                          showUndo: true,
-                          showRedo: true,
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                if (_showFormattingToolbar)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF302B38)
+                          : const Color(0xFFF3F0F6),
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outline
+                              .withOpacity(0.25),
                         ),
                       ),
                     ),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: minHeight,
-                      maxHeight: maxHeight,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                      child: QuillEditor.basic(
-                        controller: controller,
-                        config: QuillEditorConfig(
-                          placeholder: widget.hint,
-                          padding: EdgeInsets.zero,
-                          expands: false,
-                          autoFocus: false,
-                          scrollable: true,
-                          showCursor: true,
-                          enableInteractiveSelection: true,
-                          enableSelectionToolbar: true,
-                          onTapOutsideEnabled: false,
-                        ),
+                    child: QuillSimpleToolbar(
+                      controller: controller,
+                      config: const QuillSimpleToolbarConfig(
+                        multiRowsDisplay: true,
+                        showFontFamily: false,
+                        showFontSize: false,
+                        showAlignmentButtons: false,
+                        showHeaderStyle: false,
+                        showCodeBlock: false,
+                        showQuote: false,
+                        showIndent: false,
+                        showLink: false,
+                        showSearchButton: false,
+                        showDirection: false,
+                        showSubscript: false,
+                        showSuperscript: false,
+                        showClipboardCut: false,
+                        showClipboardCopy: false,
+                        showClipboardPaste: false,
+                        showColorButton: true,
+                        showBackgroundColorButton: true,
+                        showClearFormat: true,
+                        showBoldButton: true,
+                        showItalicButton: true,
+                        showUnderLineButton: true,
+                        showStrikeThrough: true,
+                        showInlineCode: false,
+                        showListNumbers: true,
+                        showListBullets: true,
+                        showListCheck: true,
+                        showUndo: true,
+                        showRedo: true,
                       ),
                     ),
                   ),
-                ],
-              ),
+                Container(
+                  constraints: BoxConstraints(
+                    minHeight: widget.minLines * 20.0,
+                    maxHeight: widget.maxLines * 30.0,
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: QuillEditor.basic(
+                    controller: controller,
+                    focusNode: _fieldFocusNode,
+                    config: QuillEditorConfig(
+                      // Keep the study question invisible until the field is focused.
+                      placeholder: _showFormattingToolbar ? widget.hint : null,
+                      padding: EdgeInsets.zero,
+                      expands: false,
+                      autoFocus: false,
+                      scrollable: true,
+                      showCursor: true,
+                      enableInteractiveSelection: true,
+                      enableSelectionToolbar: true,
+                      onTapOutsideEnabled: true,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
