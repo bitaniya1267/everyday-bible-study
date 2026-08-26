@@ -2777,7 +2777,44 @@ class _RichStudyFieldState
         ),
         child: QuillSimpleToolbar(
           controller: controller,
-          config: const QuillSimpleToolbarConfig(
+          config: QuillSimpleToolbarConfig(
+            // Keep the selected formatting icons visible. Flutter Quill 11.5.1
+            // uses Material 3 selected IconButton styling by default, which
+            // can draw a large filled circle over the icon.
+            iconTheme: QuillIconTheme(
+              iconButtonSelectedData: IconButtonData(
+                color: Theme.of(context).colorScheme.primary,
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.all(
+                    Colors.transparent,
+                  ),
+                  overlayColor: WidgetStateProperty.all(
+                    Colors.transparent,
+                  ),
+                  shape: WidgetStateProperty.all(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ),
+              ),
+              iconButtonUnselectedData: IconButtonData(
+                color: Theme.of(context).colorScheme.primary,
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.all(
+                    Colors.transparent,
+                  ),
+                  overlayColor: WidgetStateProperty.all(
+                    Colors.transparent,
+                  ),
+                ),
+              ),
+            ),
+
             // One compact row greatly reduces the delay when the
             // toolbar first appears, while keeping the formatting
             // controls available.
