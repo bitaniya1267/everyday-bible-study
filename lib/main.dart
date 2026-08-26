@@ -2595,8 +2595,7 @@ class RichStudyField extends StatefulWidget {
   });
 
   @override
-  State<RichStudyField> createState() =>
-      _RichStudyFieldState();
+  State<RichStudyField> createState() => _RichStudyFieldState();
 }
 
 class RichFieldValue {
@@ -2611,9 +2610,10 @@ class RichFieldValue {
 
 class _RichStudyFieldState extends State<RichStudyField> {
   late QuillController controller;
-  late FocusNode _editorFocusNode;
 
-  bool _showToolbar = false;
+  // The field starts completely clean. The editor and toolbar only appear
+  // after the user taps the writing area.
+  bool _isActive = false;
 
   @override
   void initState() {
@@ -2627,13 +2627,9 @@ class _RichStudyFieldState extends State<RichStudyField> {
     controller = QuillController(
       document: document,
       selection: TextSelection.collapsed(
-        offset: document.length > 0
-            ? document.length - 1
-            : 0,
+        offset: document.length > 0 ? document.length - 1 : 0,
       ),
     );
-
-    _editorFocusNode = FocusNode();
 
     controller.addListener(_changed);
   }
@@ -2644,33 +2640,35 @@ class _RichStudyFieldState extends State<RichStudyField> {
     widget.onChanged(
       RichFieldValue(
         plainText: plain.trimRight(),
-        richText: documentToJson(
-          controller.document,
-        ),
+        richText: documentToJson(controller.document),
       ),
     );
   }
 
-  void _setToolbarVisible(bool visible) {
-    if (!mounted || _showToolbar == visible) return;
+  void _activate() {
+    if (!mounted || _isActive) return;
+    setState(() => _isActive = true);
+  }
 
-    setState(() {
-      _showToolbar = visible;
-    });
+  void _deactivate() {
+    if (!mounted || !_isActive) return;
+    setState(() => _isActive = false);
   }
 
   @override
   void dispose() {
     controller.removeListener(_changed);
     controller.dispose();
-    _editorFocusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark =
-        Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // A compact writing area. It stays the same size whether active or not,
+    // so the page does not jump around when the toolbar is opened.
+    const double writingHeight = 104;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -2686,9 +2684,9 @@ class _RichStudyFieldState extends State<RichStudyField> {
             ),
           ),
           const SizedBox(height: 7),
-          Focus(
-            focusNode: _editorFocusNode,
-            onFocusChange: _setToolbarVisible,
+          TapRegion(
+            onTapInside: (_) => _activate(),
+            onTapOutside: (_) => _deactivate(),
             child: Container(
               decoration: BoxDecoration(
                 color: Theme.of(context)
@@ -2706,9 +2704,9 @@ class _RichStudyFieldState extends State<RichStudyField> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // The toolbar is completely removed from the widget tree
-                  // until the writing area receives focus.
-                  if (_showToolbar)
+                  // Toolbar is not built at all until the writing area is
+                  // activated. All formatting tools remain available.
+                  if (_isActive)
                     Container(
                       height: 42,
                       decoration: BoxDecoration(
@@ -2763,28 +2761,34 @@ class _RichStudyFieldState extends State<RichStudyField> {
                       ),
                     ),
 
-                  // Short writing area. No explanatory text is shown.
+                  // When inactive the editor itself is hidden, leaving a
+                  // clean blank writing area. Tapping the area activates it.
                   SizedBox(
-                    height: 104,
-                    child: QuillEditor.basic(
-                      controller: controller,
-                      config: QuillEditorConfig(
-                        placeholder: widget.hint,
-                        padding: const EdgeInsets.fromLTRB(
-                          12,
-                          9,
-                          12,
-                          9,
-                        ),
-                        expands: false,
-                        autoFocus: false,
-                        scrollable: true,
-                        showCursor: true,
-                        enableInteractiveSelection: true,
-                        enableSelectionToolbar: true,
-                        onTapOutsideEnabled: true,
-                      ),
-                    ),
+                    height: writingHeight,
+                    child: _isActive
+                        ? QuillEditor.basic(
+                            controller: controller,
+                            config: QuillEditorConfig(
+                              placeholder: widget.hint,
+                              padding: const EdgeInsets.fromLTRB(
+                                12,
+                                9,
+                                12,
+                                9,
+                              ),
+                              expands: false,
+                              autoFocus: true,
+                              scrollable: true,
+                              showCursor: true,
+                              enableInteractiveSelection: true,
+                              enableSelectionToolbar: true,
+                              onTapOutsideEnabled: true,
+                            ),
+                          )
+                        : InkWell(
+                            onTap: _activate,
+                            child: const SizedBox.expand(),
+                          ),
                   ),
                 ],
               ),
