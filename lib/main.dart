@@ -2778,38 +2778,59 @@ class _RichStudyFieldState
         child: QuillSimpleToolbar(
           controller: controller,
           config: QuillSimpleToolbarConfig(
-            // Keep the selected formatting icons visible. Flutter Quill 11.5.1
-            // uses Material 3 selected IconButton styling by default, which
-            // can draw a large filled circle over the icon.
-            iconTheme: QuillIconTheme(
-              iconButtonSelectedData: IconButtonData(
-                color: Theme.of(context).colorScheme.primary,
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.all(
-                    Colors.transparent,
-                  ),
-                  overlayColor: WidgetStateProperty.all(
-                    Colors.transparent,
-                  ),
-                  shape: WidgetStateProperty.all(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
+            // IMPORTANT: In flutter_quill 11.5.1 the toggle buttons use
+            // buttonOptions/base for their icon theme. Putting iconTheme
+            // only on QuillSimpleToolbarConfig does not reliably override
+            // the Material 3 selected-button background.
+            buttonOptions: QuillSimpleToolbarButtonOptions(
+              base: QuillToolbarBaseButtonOptions(
+                iconSize: 17,
+                iconButtonFactor: 1.0,
+                iconTheme: QuillIconTheme(
+                  iconButtonSelectedData: IconButtonData(
+                    color: Theme.of(context).colorScheme.primary,
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(28, 28),
+                    visualDensity: VisualDensity.compact,
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.all(
+                        Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                      ),
+                      foregroundColor: WidgetStateProperty.resolveWith<Color?>(
+                        (_) => Theme.of(context).colorScheme.primary,
+                      ),
+                      overlayColor: WidgetStateProperty.resolveWith<Color?>(
+                        (_) => Colors.transparent,
+                      ),
+                      shadowColor: WidgetStateProperty.resolveWith<Color?>(
+                        (_) => Colors.transparent,
+                      ),
+                      surfaceTintColor: WidgetStateProperty.resolveWith<Color?>(
+                        (_) => Colors.transparent,
+                      ),
+                      shape: WidgetStateProperty.resolveWith<OutlinedBorder?>(
+                        (_) => RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              iconButtonUnselectedData: IconButtonData(
-                color: Theme.of(context).colorScheme.primary,
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.all(
-                    Colors.transparent,
-                  ),
-                  overlayColor: WidgetStateProperty.all(
-                    Colors.transparent,
+                  iconButtonUnselectedData: IconButtonData(
+                    color: Theme.of(context).colorScheme.primary,
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(28, 28),
+                    visualDensity: VisualDensity.compact,
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.resolveWith<Color?>(
+                        (_) => Colors.transparent,
+                      ),
+                      foregroundColor: WidgetStateProperty.resolveWith<Color?>(
+                        (_) => Theme.of(context).colorScheme.primary,
+                      ),
+                      overlayColor: WidgetStateProperty.resolveWith<Color?>(
+                        (_) => Colors.transparent,
+                      ),
+                    ),
                   ),
                 ),
               ),
