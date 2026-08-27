@@ -1000,7 +1000,8 @@ class _AppShellState extends State<AppShell> {
   }
 
   Future<void> loadData() async {
-    final loaded = await StudyStorage.loadDays();
+    final loaded =
+        await StudyStorage.loadDays();
 
     if (!mounted) return;
 
@@ -1012,12 +1013,16 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> saveData() async {
     await StudyStorage.saveDays(days);
+
     if (!mounted) return;
+
     setState(() {});
   }
 
   void updateDay(StudyDay day) {
-    final index = days.indexWhere((item) => item.dateKey == day.dateKey);
+    final index = days.indexWhere(
+      (item) => item.dateKey == day.dateKey,
+    );
 
     setState(() {
       if (index >= 0) {
@@ -1032,8 +1037,11 @@ class _AppShellState extends State<AppShell> {
 
   void deleteDay(String dateKey) {
     setState(() {
-      days.removeWhere((day) => day.dateKey == dateKey);
+      days.removeWhere(
+        (day) => day.dateKey == dateKey,
+      );
     });
+
     saveData();
   }
 
@@ -1041,43 +1049,43 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     if (loading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
       );
     }
 
     final pages = [
       HomeScreen(
         days: days,
+        onOpenStudy: () {
+          setState(() {
+            currentIndex = 1;
+          });
+        },
         onOpenDay: (day) {
-          setState(() => currentIndex = 1);
+          setState(() {
+            currentIndex = 1;
+          });
         },
         onDeleteDay: deleteDay,
         onOpenSettings: () {
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => SettingsScreen(
-                isDarkMode: widget.isDarkMode,
-                onThemeChanged: widget.onThemeChanged,
+                isDarkMode:
+                    widget.isDarkMode,
+                onThemeChanged:
+                    widget.onThemeChanged,
               ),
             ),
           );
-        },
-        onStartStudy: () {
-          setState(() => currentIndex = 1);
-        },
-        onOpenCalendar: () {
-          setState(() => currentIndex = 2);
-        },
-        onOpenStats: () {
-          setState(() => currentIndex = 3);
         },
       ),
       DailyStudyScreen(
         days: days,
         onSaveDay: updateDay,
       ),
-      StudyCalendarScreen(days: days),
-      StatsScreen(days: days),
       BackupScreen(
         days: days,
         onRestored: loadData,
@@ -1085,36 +1093,43 @@ class _AppShellState extends State<AppShell> {
     ];
 
     return Scaffold(
-      body: SafeArea(child: pages[currentIndex]),
-      bottomNavigationBar: NavigationBar(
+      body: SafeArea(
+        child: pages[currentIndex],
+      ),
+      bottomNavigationBar:
+          NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: (index) {
-          setState(() => currentIndex = index);
+          setState(() {
+            currentIndex = index;
+          });
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+            icon: Icon(
+              Icons.home_outlined,
+            ),
+            selectedIcon: Icon(
+              Icons.home,
+            ),
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.menu_book_outlined),
-            selectedIcon: Icon(Icons.menu_book),
+            icon: Icon(
+              Icons.menu_book_outlined,
+            ),
+            selectedIcon: Icon(
+              Icons.menu_book,
+            ),
             label: 'Study',
           ),
           NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month),
-            label: 'Calendar',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart),
-            label: 'Stats',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.backup_outlined),
-            selectedIcon: Icon(Icons.backup),
+            icon: Icon(
+              Icons.backup_outlined,
+            ),
+            selectedIcon: Icon(
+              Icons.backup,
+            ),
             label: 'Backup',
           ),
         ],
@@ -1129,36 +1144,28 @@ class _AppShellState extends State<AppShell> {
 
 class HomeScreen extends StatefulWidget {
   final List<StudyDay> days;
+  final VoidCallback onOpenStudy;
   final void Function(StudyDay day) onOpenDay;
   final void Function(String dateKey) onDeleteDay;
   final VoidCallback onOpenSettings;
-  final VoidCallback onStartStudy;
-  final VoidCallback onOpenCalendar;
-  final VoidCallback onOpenStats;
 
   const HomeScreen({
     super.key,
     required this.days,
+    required this.onOpenStudy,
     required this.onOpenDay,
     required this.onDeleteDay,
     required this.onOpenSettings,
-    required this.onStartStudy,
-    required this.onOpenCalendar,
-    required this.onOpenStats,
   });
 
   @override
-  State<HomeScreen> createState() =>
-      _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   DateTime selectedDate = DateTime.now();
-
   Map<String, Set<String>> progress = {};
-
   bool loadingReading = true;
-
   bool booksExpanded = false;
 
   @override
@@ -1168,77 +1175,50 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> loadReadingProgress() async {
-    final loaded =
-        await ReadingStorage.load();
-
+    final loaded = await ReadingStorage.load();
     if (!mounted) return;
-
     setState(() {
       progress = loaded;
       loadingReading = false;
     });
   }
 
-  String get currentDateKey {
-    return ReadingStorage.dateKey(
-      selectedDate,
-    );
-  }
+  String get currentDateKey => ReadingStorage.dateKey(selectedDate);
 
-  Set<String> get todayRead {
-    return progress[currentDateKey] ??
-        <String>{};
-  }
+  Set<String> get todayRead => progress[currentDateKey] ?? <String>{};
 
-  int get totalReadToday {
-    return todayRead.length;
+  int get totalReadToday => todayRead.length;
+
+  double get todayPercentage {
+    if (totalNewTestamentChapters == 0) return 0;
+    return totalReadToday / totalNewTestamentChapters;
   }
 
   int bookReadCount(BibleBook book) {
-    return todayRead
-        .where(
-          (id) =>
-              id.startsWith(
-                '${book.name}|',
-              ),
-        )
-        .length;
+    return todayRead.where((id) => id.startsWith('${book.name}|')).length;
   }
 
-  double get todayPercentage {
-    if (totalNewTestamentChapters == 0) {
-      return 0;
-    }
+  int get studyDays => widget.days.length;
 
-    return totalReadToday /
-        totalNewTestamentChapters;
-  }
+  int get studyChapterCount => widget.days.fold<int>(
+        0,
+        (sum, day) => sum + day.chapters.length,
+      );
+
+  int get streak => calculateStudyStreak(widget.days);
 
   String formatDate(String dateKey) {
     try {
-      final date =
-          DateTime.parse(dateKey);
-
-      return '${date.day}/'
-          '${date.month}/'
-          '${date.year}';
+      final date = DateTime.parse(dateKey);
+      return '${date.day}/${date.month}/${date.year}';
     } catch (_) {
       return dateKey;
     }
   }
 
-  Future<void> toggleChapter(
-    BibleBook book,
-    int chapter,
-  ) async {
-    final id =
-        '${book.name}|$chapter';
-
-    final set =
-        progress.putIfAbsent(
-      currentDateKey,
-      () => <String>{},
-    );
+  Future<void> toggleChapter(BibleBook book, int chapter) async {
+    final id = '${book.name}|$chapter';
+    final set = progress.putIfAbsent(currentDateKey, () => <String>{});
 
     setState(() {
       if (set.contains(id)) {
@@ -1248,86 +1228,25 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
 
-    await ReadingStorage.save(
-      progress,
-    );
+    await ReadingStorage.save(progress);
   }
 
   Future<void> pickReadingDate() async {
-    final picked =
-        await showDatePicker(
+    final picked = await showDatePicker(
       context: context,
       initialDate: selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-
     if (picked == null) return;
-
-    setState(() {
-      selectedDate = picked;
-    });
-  }
-
-  int get studyDays {
-    return widget.days.length;
-  }
-
-  int get studyChapterCount {
-    return widget.days.fold<int>(
-      0,
-      (sum, day) =>
-          sum + day.chapters.length,
-    );
-  }
-
-  int get totalReadAcrossDates {
-    final all = <String>{};
-    for (final set in progress.values) {
-      all.addAll(set);
-    }
-    return all.length;
-  }
-
-  double get overallPercentage {
-    if (totalNewTestamentChapters == 0) return 0.0;
-    return (totalReadAcrossDates / totalNewTestamentChapters)
-        .clamp(0.0, 1.0)
-        .toDouble();
-  }
-
-  int get currentStreak {
-    if (widget.days.isEmpty) return 0;
-
-    final dates = widget.days
-        .map((day) => DateTime.tryParse(day.dateKey))
-        .whereType<DateTime>()
-        .map((date) => DateTime(date.year, date.month, date.day))
-        .toSet()
-        .toList()
-      ..sort((a, b) => b.compareTo(a));
-
-    if (dates.isEmpty) return 0;
-
-    DateTime cursor = DateTime.now();
-    final today = DateTime(cursor.year, cursor.month, cursor.day);
-    final latest = dates.first;
-    if (latest != today && latest != today.subtract(const Duration(days: 1))) {
-      return 0;
-    }
-
-    if (latest != today) cursor = latest;
-    var streak = 0;
-    while (dates.contains(cursor)) {
-      streak++;
-      cursor = cursor.subtract(const Duration(days: 1));
-    }
-    return streak;
+    setState(() => selectedDate = picked);
   }
 
   Future<void> _showStudyExport(BuildContext context) async {
-    final sorted = [...widget.days]..sort((a, b) => b.dateKey.compareTo(a.dateKey));
+    final sorted = [...widget.days]
+      ..sort((a, b) => b.dateKey.compareTo(a.dateKey));
     final buffer = StringBuffer('BITANIYA BIBLE STUDY\n\n');
+
     for (final day in sorted) {
       buffer.writeln('DATE: ${prettyStudyDate(day.dateKey)}');
       for (final c in day.chapters) {
@@ -1345,24 +1264,37 @@ class _HomeScreenState extends State<HomeScreen> {
           'Character lessons': c.characterLessons,
         };
         for (final e in fields.entries) {
-          if (e.value.trim().isNotEmpty) buffer.writeln('${e.key}: ${e.value.trim()}');
+          if (e.value.trim().isNotEmpty) {
+            buffer.writeln('${e.key}: ${e.value.trim()}');
+          }
         }
       }
       buffer.writeln('\n----------------------------------------\n');
     }
+
     final text = buffer.toString();
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Export your studies'),
-        content: SizedBox(width: 650, child: SingleChildScrollView(child: SelectableText(text))),
+        content: SizedBox(
+          width: 650,
+          child: SingleChildScrollView(child: SelectableText(text)),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Close')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
+          ),
           FilledButton.icon(
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: text));
               if (dialogContext.mounted) Navigator.pop(dialogContext);
-              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Study export copied to clipboard.')));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Study export copied to clipboard.')),
+                );
+              }
             },
             icon: const Icon(Icons.copy),
             label: const Text('Copy'),
@@ -1374,53 +1306,31 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final sorted = [...widget.days]..sort((a, b) => b.dateKey.compareTo(a.dateKey));
+    final theme = Theme.of(context);
+    final sorted = [...widget.days]
+      ..sort((a, b) => b.dateKey.compareTo(a.dateKey));
+    final latest = sorted.isEmpty ? null : sorted.first;
     final recent = sorted.take(3).toList();
-    final percent = overallPercentage;
 
     return CustomScrollView(
       slivers: [
-        SliverAppBar(
+        SliverAppBar.large(
           pinned: true,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          surfaceTintColor: Colors.transparent,
-          title: const Text(
-            'Bitaniya Bible Study',
-            style: TextStyle(fontWeight: FontWeight.w800),
-          ),
+          title: const Text('Bitaniya Bible Study'),
           actions: [
             PopupMenuButton<String>(
               tooltip: 'More',
-              icon: const Icon(Icons.more_vert),
               onSelected: (value) {
                 switch (value) {
-                  case 'start':
-                    widget.onStartStudy();
-                    break;
-                  case 'search':
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => StudySearchScreen(days: widget.days),
-                    ));
-                    break;
-                  case 'calendar':
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => StudyCalendarScreen(days: widget.days),
-                    ));
-                    break;
-                  case 'characters':
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => CharacterLibraryScreen(days: widget.days),
-                    ));
-                    break;
-                  case 'bookmarks':
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => StudyLibraryScreen(days: widget.days, favoritesOnly: false),
-                    ));
-                    break;
                   case 'favorites':
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => StudyLibraryScreen(days: widget.days, favoritesOnly: true),
-                    ));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => StudyLibraryScreen(
+                          days: widget.days,
+                          favoritesOnly: true,
+                        ),
+                      ),
+                    );
                     break;
                   case 'export':
                     _showStudyExport(context);
@@ -1430,48 +1340,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     break;
                 }
               },
-              itemBuilder: (context) => const [
-                PopupMenuItem(
-                  value: 'start',
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.play_arrow),
-                    title: Text("Start Today's Study"),
-                  ),
-                ),
-                PopupMenuDivider(),
-                PopupMenuItem(
-                  value: 'search',
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.search),
-                    title: Text('Search Studies'),
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'calendar',
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.calendar_month),
-                    title: Text('Study Calendar'),
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'characters',
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.person_outline),
-                    title: Text('Character Library'),
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'bookmarks',
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.bookmark_border),
-                    title: Text('Bookmarks'),
-                  ),
-                ),
+              itemBuilder: (_) => const [
                 PopupMenuItem(
                   value: 'favorites',
                   child: ListTile(
@@ -1485,10 +1354,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(Icons.ios_share_outlined),
-                    title: Text('Export Studies'),
+                    title: Text('Export studies'),
                   ),
                 ),
-                PopupMenuDivider(),
                 PopupMenuItem(
                   value: 'settings',
                   child: ListTile(
@@ -1502,172 +1370,276 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
+              // Main welcome / continue card.
               Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  side: BorderSide(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.18),
-                  ),
-                ),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 26, 20, 22),
+                  padding: const EdgeInsets.all(18),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.menu_book_rounded,
-                        size: 46,
-                        color: Theme.of(context).colorScheme.primary,
+                      Row(
+                        children: [
+                          Container(
+                            width: 46,
+                            height: 46,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Icon(
+                              Icons.menu_book_rounded,
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Welcome back',
+                                  style: TextStyle(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  latest == null
+                                      ? 'Ready for today’s study?'
+                                      : 'Continue your Bible study',
+                                  style: const TextStyle(
+                                    fontSize: 19,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        "TODAY'S STUDY",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.1,
-                          color: Theme.of(context).colorScheme.primary,
+                      const SizedBox(height: 16),
+                      if (latest != null) ...[
+                        Text(
+                          '${prettyStudyDate(latest.dateKey)} • ${latest.chapters.length} chapter${latest.chapters.length == 1 ? '' : 's'}',
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Ready to study?',
-                        style: TextStyle(
-                          fontSize: 27,
-                          fontWeight: FontWeight.w800,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 20),
+                        const SizedBox(height: 12),
+                      ],
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
-                          onPressed: widget.onStartStudy,
-                          icon: const Icon(Icons.arrow_forward),
-                          label: const Text(
-                            "Start Today's Study",
-                            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-                          ),
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(56),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
+                          onPressed: widget.onOpenStudy,
+                          icon: const Icon(Icons.edit_note_rounded),
+                          label: Text(latest == null ? 'START TODAY’S STUDY' : 'START TODAY’S STUDY'),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 28),
-              const Center(
-                child: Text(
-                  'YOUR PROGRESS',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: 1),
-                ),
-              ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
+
+              // One compact stats card instead of repeated stat sections.
               Card(
-                elevation: 0,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
                   child: Row(
                     children: [
-                      Expanded(child: _HomeProgressStat(value: '$studyDays', label: 'Study Days', icon: Icons.calendar_month_outlined)),
-                      _VerticalDivider(),
-                      Expanded(child: _HomeProgressStat(value: '$studyChapterCount', label: 'Chapters', icon: Icons.menu_book_outlined)),
-                      _VerticalDivider(),
-                      Expanded(child: _HomeProgressStat(value: '$currentStreak', label: 'Streak', icon: Icons.local_fire_department_outlined)),
+                      Expanded(
+                        child: _HomeStat(
+                          icon: Icons.calendar_month_outlined,
+                          value: '$studyDays',
+                          label: 'Study days',
+                        ),
+                      ),
+                      _homeDivider(context),
+                      Expanded(
+                        child: _HomeStat(
+                          icon: Icons.menu_book_outlined,
+                          value: '$studyChapterCount',
+                          label: 'Chapters',
+                        ),
+                      ),
+                      _homeDivider(context),
+                      Expanded(
+                        child: _HomeStat(
+                          icon: Icons.local_fire_department_outlined,
+                          value: '$streak',
+                          label: 'Day streak',
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
-              InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const NewTestamentTrackerScreen()),
-                  );
-                },
-                child: Card(
-                  elevation: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                          child: Icon(Icons.menu_book_rounded, color: Theme.of(context).colorScheme.primary, size: 30),
+              const SizedBox(height: 14),
+
+              // Small, non-repetitive tools area.
+              Text(
+                'Quick access',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _HomeQuickAction(
+                      icon: Icons.search,
+                      label: 'Search',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => StudySearchScreen(days: widget.days),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('New Testament', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-                              const SizedBox(height: 4),
-                              Text('$totalReadAcrossDates of $totalNewTestamentChapters chapters'),
-                              const SizedBox(height: 10),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: LinearProgressIndicator(value: percent, minHeight: 8),
-                              ),
-                            ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _HomeQuickAction(
+                      icon: Icons.calendar_month_outlined,
+                      label: 'Calendar',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => StudyCalendarScreen(days: widget.days),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _HomeQuickAction(
+                      icon: Icons.bookmark_border,
+                      label: 'Bookmarks',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => StudyLibraryScreen(
+                            days: widget.days,
+                            favoritesOnly: false,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Text(
-                          '${(percent * 100).round()}%',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary),
-                        ),
-                      ],
+                      ),
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _HomeQuickAction(
+                      icon: Icons.person_outline,
+                      label: 'Characters',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => CharacterLibraryScreen(days: widget.days),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+
+              // New Testament progress gets one clean card.
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.auto_stories_outlined, color: theme.colorScheme.primary),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(
+                              'New Testament reading',
+                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Choose date',
+                            onPressed: pickReadingDate,
+                            icon: const Icon(Icons.calendar_today_outlined, size: 20),
+                          ),
+                          IconButton(
+                            tooltip: booksExpanded ? 'Hide books' : 'Show books',
+                            onPressed: () => setState(() => booksExpanded = !booksExpanded),
+                            icon: Icon(
+                              booksExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${(todayPercentage * 100).toStringAsFixed(1)}% • $totalReadToday / $totalNewTestamentChapters chapters',
+                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                      const SizedBox(height: 10),
+                      LinearProgressIndicator(value: todayPercentage),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Reading date: ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      if (booksExpanded) ...[
+                        const SizedBox(height: 12),
+                        ...newTestamentBooks.map(_buildBookCard),
+                      ],
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 28),
-              const Center(
-                child: Text(
-                  'RECENT STUDIES',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: 1),
-                ),
+              const SizedBox(height: 20),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Recent studies',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  if (recent.isNotEmpty)
+                    Text(
+                      '${sorted.length} total',
+                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 9),
+
               if (recent.isEmpty)
                 const _EmptyCard(
                   icon: Icons.menu_book_outlined,
                   title: 'No studies yet',
-                  message: 'Start your first Bible study using the button above.',
+                  message: 'Your saved studies will appear here.',
                 )
               else
-                Card(
-                  elevation: 0,
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
-                    children: [
-                      for (int i = 0; i < recent.length; i++) ...[
-                        _RecentHomeStudyTile(
-                          day: recent[i],
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => StandaloneDayEditor(
-                                  day: recent[i],
-                                  onSave: widget.onOpenDay,
-                                ),
-                              ),
-                            );
-                          },
+                ...recent.map(
+                  (day) => _RecentStudyTile(
+                    day: day,
+                    formatDate: formatDate,
+                    onOpen: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => StandaloneDayEditor(
+                          day: day,
+                          onSave: widget.onOpenDay,
                         ),
-                        if (i < recent.length - 1) const Divider(height: 1, indent: 20, endIndent: 20),
-                      ],
-                    ],
+                      ),
+                    ),
+                    onDelete: () => _confirmDelete(context, day),
                   ),
                 ),
             ]),
@@ -1677,184 +1649,66 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBookCard(
-    BibleBook book,
-  ) {
-    final read =
-        bookReadCount(book);
+  Widget _homeDivider(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 34,
+      color: Theme.of(context).colorScheme.outlineVariant,
+    );
+  }
 
-    final percentage =
-        book.chapters == 0
-            ? 0.0
-            : read / book.chapters;
+  Widget _buildBookCard(BibleBook book) {
+    final read = bookReadCount(book);
+    final percentage = book.chapters == 0 ? 0.0 : read / book.chapters;
 
     return Padding(
-      padding:
-          const EdgeInsets.fromLTRB(
-        10,
-        0,
-        10,
-        8,
-      ),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Card(
         child: ExpansionTile(
           initiallyExpanded: false,
-          leading: CircleAvatar(
-            child: Text(
-              '$read',
-              style:
-                  const TextStyle(
-                fontSize: 13,
-                fontWeight:
-                    FontWeight.bold,
-              ),
-            ),
-          ),
-          title: Text(
-            book.name,
-            style:
-                const TextStyle(
-              fontWeight:
-                  FontWeight.w700,
-            ),
-          ),
-          subtitle: Text(
-            '$read / ${book.chapters}',
-          ),
-          childrenPadding:
-              const EdgeInsets.fromLTRB(
-            16,
-            0,
-            16,
-            16,
-          ),
+          leading: CircleAvatar(child: Text('$read', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+          title: Text(book.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+          subtitle: Text('$read / ${book.chapters}'),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
           children: [
-            LinearProgressIndicator(
-              value: percentage,
-              minHeight: 6,
-            ),
-            const SizedBox(
-              height: 12,
-            ),
+            LinearProgressIndicator(value: percentage, minHeight: 5),
+            const SizedBox(height: 10),
             GridView.builder(
               shrinkWrap: true,
-              physics:
-                  const NeverScrollableScrollPhysics(),
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 4,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 1.4,
+                crossAxisSpacing: 7,
+                mainAxisSpacing: 7,
+                childAspectRatio: 1.45,
               ),
-              itemCount:
-                  book.chapters,
-              itemBuilder:
-                  (context, index) {
-                final chapter =
-                    index + 1;
-
-                final id =
-                    '${book.name}|$chapter';
-
-                final isRead =
-                    todayRead.contains(
-                  id,
-                );
+              itemCount: book.chapters,
+              itemBuilder: (context, index) {
+                final chapter = index + 1;
+                final id = '${book.name}|$chapter';
+                final isRead = todayRead.contains(id);
 
                 return InkWell(
-                  borderRadius:
-                      BorderRadius.circular(
-                    10,
-                  ),
-                  onTap: () {
-                    toggleChapter(
-                      book,
-                      chapter,
-                    );
-                  },
+                  borderRadius: BorderRadius.circular(9),
+                  onTap: () => toggleChapter(book, chapter),
                   child: Container(
-                    decoration:
-                        BoxDecoration(
+                    decoration: BoxDecoration(
                       color: isRead
-                          ? Theme.of(
-                              context,
-                            )
-                              .colorScheme
-                              .primary
-                          : Theme.of(
-                              context,
-                            )
-                              .colorScheme
-                              .surfaceContainerHighest,
-                      borderRadius:
-                          BorderRadius.circular(
-                        10,
-                      ),
-                      border:
-                          Border.all(
-                        color: isRead
-                            ? Theme.of(
-                                context,
-                              )
-                                .colorScheme
-                                .primary
-                            : Theme.of(
-                                context,
-                              )
-                                .colorScheme
-                                .outline
-                                .withOpacity(
-                                  0.3,
-                                ),
+                          ? themeOf(context).primary
+                          : themeOf(context).surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(
+                        color: themeOf(context).outline.withOpacity(.3),
                       ),
                     ),
                     child: Center(
-                      child: Column(
-                        mainAxisAlignment:
-                            MainAxisAlignment
-                                .center,
-                        children: [
-                          Icon(
-                            isRead
-                                ? Icons
-                                    .check_circle
-                                : Icons
-                                    .circle_outlined,
-                            size: 20,
-                            color: isRead
-                                ? Theme.of(
-                                    context,
-                                  )
-                                    .colorScheme
-                                    .onPrimary
-                                : Theme.of(
-                                    context,
-                                  )
-                                    .colorScheme
-                                    .onSurface,
-                          ),
-                          const SizedBox(
-                            height: 3,
-                          ),
-                          Text(
-                            'Ch. $chapter',
-                            style:
-                                TextStyle(
-                              fontSize: 12,
-                              fontWeight:
-                                  FontWeight
-                                      .bold,
-                              color: isRead
-                                  ? Theme.of(
-                                      context,
-                                    )
-                                      .colorScheme
-                                      .onPrimary
-                                  : null,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        'Ch. $chapter',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isRead ? themeOf(context).onPrimary : null,
+                        ),
                       ),
                     ),
                   ),
@@ -1867,344 +1721,159 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _confirmDelete(
-    BuildContext context,
-    StudyDay day,
-  ) async {
-    final answer =
-        await showDialog<bool>(
+  ColorScheme themeOf(BuildContext context) => Theme.of(context).colorScheme;
+
+  Future<void> _confirmDelete(BuildContext context, StudyDay day) async {
+    final answer = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text(
-            'Delete study?',
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete study?'),
+        content: Text('Delete the study for ${formatDate(day.dateKey)}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
           ),
-          content: Text(
-            'Delete the study for '
-            '${formatDate(day.dateKey)}?',
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(
-                  dialogContext,
-                  false,
-                );
-              },
-              child:
-                  const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(
-                  dialogContext,
-                  true,
-                );
-              },
-              child:
-                  const Text('Delete'),
-            ),
-          ],
-        );
-      },
+        ],
+      ),
     );
 
-    if (answer == true) {
-      widget.onDeleteDay(
-        day.dateKey,
-      );
-    }
+    if (answer == true) widget.onDeleteDay(day.dateKey);
   }
 }
 
-// ============================================================
-// HOME DESIGN HELPERS
-// ============================================================
-
-class _HomeProgressStat extends StatelessWidget {
+class _HomeStat extends StatelessWidget {
+  final IconData icon;
   final String value;
   final String label;
-  final IconData icon;
 
-  const _HomeProgressStat({
+  const _HomeStat({
+    required this.icon,
     required this.value,
     required this.label,
-    required this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
     return Column(
-      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
+        Icon(icon, size: 21, color: color),
         const SizedBox(height: 5),
-        Text(value, style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w800)),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
+        ),
         const SizedBox(height: 2),
-        Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 11,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
       ],
     );
   }
 }
 
-class _VerticalDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 62,
-      color: Theme.of(context).colorScheme.outlineVariant,
-    );
-  }
-}
-
-class _RecentHomeStudyTile extends StatelessWidget {
-  final StudyDay day;
+class _HomeQuickAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
   final VoidCallback onTap;
 
-  const _RecentHomeStudyTile({
-    required this.day,
+  const _HomeQuickAction({
+    required this.icon,
+    required this.label,
     required this.onTap,
   });
 
-  String get title {
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(.55),
+      borderRadius: BorderRadius.circular(15),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(15),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 5),
+          child: Column(
+            children: [
+              Icon(icon, size: 21),
+              const SizedBox(height: 5),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RecentStudyTile extends StatelessWidget {
+  final StudyDay day;
+  final String Function(String) formatDate;
+  final VoidCallback onOpen;
+  final VoidCallback onDelete;
+
+  const _RecentStudyTile({
+    required this.day,
+    required this.formatDate,
+    required this.onOpen,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final refs = day.chapters
         .map((c) => c.reference.trim())
-        .where((r) => r.isNotEmpty)
-        .toList();
-    return refs.isEmpty ? 'Bible Study' : refs.first;
-  }
+        .where((x) => x.isNotEmpty)
+        .join(' • ');
 
-  @override
-  Widget build(BuildContext context) {
-    final date = DateTime.tryParse(day.dateKey);
-    final dateText = date == null
-        ? day.dateKey
-        : '${date.month}/${date.day}/${date.year}';
-
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-      leading: CircleAvatar(
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        child: Icon(Icons.menu_book_rounded, color: Theme.of(context).colorScheme.primary),
-      ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-      subtitle: Text(dateText),
-      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 17),
-      onTap: onTap,
-    );
-  }
-}
-
-// ============================================================
-// NEW TESTAMENT TRACKER
-// ============================================================
-
-class NewTestamentTrackerScreen extends StatefulWidget {
-  const NewTestamentTrackerScreen({super.key});
-
-  @override
-  State<NewTestamentTrackerScreen> createState() => _NewTestamentTrackerScreenState();
-}
-
-class _NewTestamentTrackerScreenState extends State<NewTestamentTrackerScreen> {
-  DateTime selectedDate = DateTime.now();
-  Map<String, Set<String>> progress = {};
-  bool loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    final loaded = await ReadingStorage.load();
-    if (!mounted) return;
-    setState(() {
-      progress = loaded;
-      loading = false;
-    });
-  }
-
-  String get dateKey => ReadingStorage.dateKey(selectedDate);
-
-  Set<String> get selected => progress[dateKey] ?? <String>{};
-
-  int get totalRead {
-    final all = <String>{};
-    for (final set in progress.values) {
-      all.addAll(set);
-    }
-    return all.length;
-  }
-
-  Future<void> _toggle(BibleBook book, int chapter) async {
-    final set = progress.putIfAbsent(dateKey, () => <String>{});
-    final id = '${book.name}|$chapter';
-    setState(() {
-      if (set.contains(id)) {
-        set.remove(id);
-      } else {
-        set.add(id);
-      }
-    });
-    await ReadingStorage.save(progress);
-  }
-
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null) setState(() => selectedDate = picked);
-  }
-
-  int _bookCount(BibleBook book) => selected.where((id) => id.startsWith('${book.name}|')).length;
-
-  @override
-  Widget build(BuildContext context) {
-    if (loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    final percent = totalNewTestamentChapters == 0
-        ? 0.0
-        : (totalRead / totalNewTestamentChapters).clamp(0.0, 1.0).toDouble();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('New Testament Tracker'),
-        actions: [
-          IconButton(onPressed: _pickDate, icon: const Icon(Icons.calendar_month)),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text('New Testament Progress', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-                      ),
-                      Text('${(percent * 100).round()}%', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary)),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text('$totalRead of $totalNewTestamentChapters chapters completed'),
-                  const SizedBox(height: 12),
-                  LinearProgressIndicator(value: percent, minHeight: 8),
-                  const SizedBox(height: 10),
-                  Text('Selecting chapters for ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'),
-                ],
-              ),
-            ),
+    return Card(
+      margin: const EdgeInsets.only(bottom: 9),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+        leading: CircleAvatar(
+          radius: 21,
+          child: Text(
+            '${day.chapters.length}',
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 14),
-          ...newTestamentBooks.map((book) {
-            final read = _bookCount(book);
-            final bookPercent = book.chapters == 0 ? 0.0 : (read / book.chapters).clamp(0.0, 1.0).toDouble();
-            return Card(
-              margin: const EdgeInsets.only(bottom: 10),
-              child: ExpansionTile(
-                leading: CircleAvatar(child: Text('$read', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
-                title: Text(book.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text('$read / ${book.chapters} chapters'),
-                childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                children: [
-                  LinearProgressIndicator(value: bookPercent, minHeight: 5),
-                  const SizedBox(height: 12),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                      childAspectRatio: 1.45,
-                    ),
-                    itemCount: book.chapters,
-                    itemBuilder: (context, index) {
-                      final chapter = index + 1;
-                      final id = '${book.name}|$chapter';
-                      final isRead = selected.contains(id);
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(10),
-                        onTap: () => _toggle(book, chapter),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: isRead
-                                ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context).colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isRead
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context).colorScheme.outline.withOpacity(0.3),
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '$chapter',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: isRead ? Theme.of(context).colorScheme.onPrimary : null,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
+        ),
+        title: Text(
+          formatDate(day.dateKey),
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text(
+          refs.isEmpty ? 'Bible study' : refs,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == 'delete') onDelete();
+          },
+          itemBuilder: (_) => const [
+            PopupMenuItem(
+              value: 'delete',
+              child: Text('Delete'),
+            ),
+          ],
+        ),
+        onTap: onOpen,
       ),
-    );
-  }
-}
-
-// ============================================================
-// STATS SCREEN
-// ============================================================
-
-class StatsScreen extends StatelessWidget {
-  final List<StudyDay> days;
-
-  const StatsScreen({super.key, required this.days});
-
-  @override
-  Widget build(BuildContext context) {
-    final chapters = days.fold<int>(0, (sum, day) => sum + day.chapters.length);
-    final books = <String>{};
-    for (final day in days) {
-      for (final chapter in day.chapters) {
-        final ref = chapter.reference.trim();
-        if (ref.isNotEmpty) books.add(ref.split(RegExp(r'\\s+')).first);
-      }
-    }
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-      children: [
-        const Text('Your Stats', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 18),
-        _StatMini(icon: Icons.calendar_month_outlined, value: '${days.length}', label: 'Study days'),
-        const SizedBox(height: 10),
-        _StatMini(icon: Icons.menu_book_outlined, value: '$chapters', label: 'Chapters studied'),
-        const SizedBox(height: 10),
-        _StatMini(icon: Icons.library_books_outlined, value: '${books.length}', label: 'Books studied'),
-      ],
     );
   }
 }
@@ -2368,11 +2037,86 @@ class SettingsScreen
 }
 
 class _StatMini extends StatelessWidget {
+  final IconData icon;
   final String label;
   final String value;
-  const _StatMini({required this.label, required this.value});
+
+  const _StatMini({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
   @override
-  Widget build(BuildContext context) => Column(children: [Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)), const SizedBox(height: 3), Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))]);
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          label,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}
+
+// ============================================================
+// DASHBOARD QUICK ACTIONS
+// ============================================================
+
+class _DashboardQuickActions extends StatelessWidget {
+  final List<StudyDay> days;
+  final VoidCallback onSearch;
+  final VoidCallback onBookmarks;
+  final VoidCallback onFavorites;
+  final VoidCallback onCalendar;
+  final VoidCallback onCharacters;
+  final VoidCallback onExport;
+
+  const _DashboardQuickActions({required this.days, required this.onSearch, required this.onBookmarks, required this.onFavorites, required this.onCalendar, required this.onCharacters, required this.onExport});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _quick(context, Icons.search, 'Search', onSearch),
+            _quick(context, Icons.bookmark_border, 'Bookmarks', onBookmarks),
+            _quick(context, Icons.star_border, 'Favorites', onFavorites),
+            _quick(context, Icons.calendar_month, 'Calendar', onCalendar),
+            _quick(context, Icons.person_outline, 'Characters', onCharacters),
+            _quick(context, Icons.ios_share_outlined, 'Export', onExport),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _quick(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+    return ActionChip(avatar: Icon(icon, size: 18), label: Text(label), onPressed: onTap);
+  }
 }
 
 // ============================================================
