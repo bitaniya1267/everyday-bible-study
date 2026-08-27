@@ -1058,11 +1058,6 @@ class _AppShellState extends State<AppShell> {
     final pages = [
       HomeScreen(
         days: days,
-        onOpenStudy: () {
-          setState(() {
-            currentIndex = 1;
-          });
-        },
         onOpenDay: (day) {
           setState(() {
             currentIndex = 1;
@@ -1073,13 +1068,16 @@ class _AppShellState extends State<AppShell> {
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => SettingsScreen(
-                isDarkMode:
-                    widget.isDarkMode,
-                onThemeChanged:
-                    widget.onThemeChanged,
+                isDarkMode: widget.isDarkMode,
+                onThemeChanged: widget.onThemeChanged,
               ),
             ),
           );
+        },
+        onStartStudy: () {
+          setState(() {
+            currentIndex = 1;
+          });
         },
       ),
       DailyStudyScreen(
@@ -1144,28 +1142,32 @@ class _AppShellState extends State<AppShell> {
 
 class HomeScreen extends StatefulWidget {
   final List<StudyDay> days;
-  final VoidCallback onOpenStudy;
   final void Function(StudyDay day) onOpenDay;
   final void Function(String dateKey) onDeleteDay;
   final VoidCallback onOpenSettings;
+  final VoidCallback onStartStudy;
 
   const HomeScreen({
     super.key,
     required this.days,
-    required this.onOpenStudy,
     required this.onOpenDay,
     required this.onDeleteDay,
     required this.onOpenSettings,
+    required this.onStartStudy,
   });
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() =>
+      _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   DateTime selectedDate = DateTime.now();
+
   Map<String, Set<String>> progress = {};
+
   bool loadingReading = true;
+
   bool booksExpanded = false;
 
   @override
@@ -1175,50 +1177,77 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> loadReadingProgress() async {
-    final loaded = await ReadingStorage.load();
+    final loaded =
+        await ReadingStorage.load();
+
     if (!mounted) return;
+
     setState(() {
       progress = loaded;
       loadingReading = false;
     });
   }
 
-  String get currentDateKey => ReadingStorage.dateKey(selectedDate);
+  String get currentDateKey {
+    return ReadingStorage.dateKey(
+      selectedDate,
+    );
+  }
 
-  Set<String> get todayRead => progress[currentDateKey] ?? <String>{};
+  Set<String> get todayRead {
+    return progress[currentDateKey] ??
+        <String>{};
+  }
 
-  int get totalReadToday => todayRead.length;
-
-  double get todayPercentage {
-    if (totalNewTestamentChapters == 0) return 0;
-    return totalReadToday / totalNewTestamentChapters;
+  int get totalReadToday {
+    return todayRead.length;
   }
 
   int bookReadCount(BibleBook book) {
-    return todayRead.where((id) => id.startsWith('${book.name}|')).length;
+    return todayRead
+        .where(
+          (id) =>
+              id.startsWith(
+                '${book.name}|',
+              ),
+        )
+        .length;
   }
 
-  int get studyDays => widget.days.length;
+  double get todayPercentage {
+    if (totalNewTestamentChapters == 0) {
+      return 0;
+    }
 
-  int get studyChapterCount => widget.days.fold<int>(
-        0,
-        (sum, day) => sum + day.chapters.length,
-      );
-
-  int get streak => calculateStudyStreak(widget.days);
+    return totalReadToday /
+        totalNewTestamentChapters;
+  }
 
   String formatDate(String dateKey) {
     try {
-      final date = DateTime.parse(dateKey);
-      return '${date.day}/${date.month}/${date.year}';
+      final date =
+          DateTime.parse(dateKey);
+
+      return '${date.day}/'
+          '${date.month}/'
+          '${date.year}';
     } catch (_) {
       return dateKey;
     }
   }
 
-  Future<void> toggleChapter(BibleBook book, int chapter) async {
-    final id = '${book.name}|$chapter';
-    final set = progress.putIfAbsent(currentDateKey, () => <String>{});
+  Future<void> toggleChapter(
+    BibleBook book,
+    int chapter,
+  ) async {
+    final id =
+        '${book.name}|$chapter';
+
+    final set =
+        progress.putIfAbsent(
+      currentDateKey,
+      () => <String>{},
+    );
 
     setState(() {
       if (set.contains(id)) {
@@ -1228,25 +1257,42 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
 
-    await ReadingStorage.save(progress);
+    await ReadingStorage.save(
+      progress,
+    );
   }
 
   Future<void> pickReadingDate() async {
-    final picked = await showDatePicker(
+    final picked =
+        await showDatePicker(
       context: context,
       initialDate: selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
+
     if (picked == null) return;
-    setState(() => selectedDate = picked);
+
+    setState(() {
+      selectedDate = picked;
+    });
+  }
+
+  int get studyDays {
+    return widget.days.length;
+  }
+
+  int get studyChapterCount {
+    return widget.days.fold<int>(
+      0,
+      (sum, day) =>
+          sum + day.chapters.length,
+    );
   }
 
   Future<void> _showStudyExport(BuildContext context) async {
-    final sorted = [...widget.days]
-      ..sort((a, b) => b.dateKey.compareTo(a.dateKey));
+    final sorted = [...widget.days]..sort((a, b) => b.dateKey.compareTo(a.dateKey));
     final buffer = StringBuffer('BITANIYA BIBLE STUDY\n\n');
-
     for (final day in sorted) {
       buffer.writeln('DATE: ${prettyStudyDate(day.dateKey)}');
       for (final c in day.chapters) {
@@ -1264,37 +1310,24 @@ class _HomeScreenState extends State<HomeScreen> {
           'Character lessons': c.characterLessons,
         };
         for (final e in fields.entries) {
-          if (e.value.trim().isNotEmpty) {
-            buffer.writeln('${e.key}: ${e.value.trim()}');
-          }
+          if (e.value.trim().isNotEmpty) buffer.writeln('${e.key}: ${e.value.trim()}');
         }
       }
       buffer.writeln('\n----------------------------------------\n');
     }
-
     final text = buffer.toString();
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Export your studies'),
-        content: SizedBox(
-          width: 650,
-          child: SingleChildScrollView(child: SelectableText(text)),
-        ),
+        content: SizedBox(width: 650, child: SingleChildScrollView(child: SelectableText(text))),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Close'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Close')),
           FilledButton.icon(
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: text));
               if (dialogContext.mounted) Navigator.pop(dialogContext);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Study export copied to clipboard.')),
-                );
-              }
+              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Study export copied to clipboard.')));
             },
             icon: const Icon(Icons.copy),
             label: const Text('Copy'),
@@ -1306,31 +1339,57 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final sorted = [...widget.days]
-      ..sort((a, b) => b.dateKey.compareTo(a.dateKey));
-    final latest = sorted.isEmpty ? null : sorted.first;
-    final recent = sorted.take(3).toList();
+    final sorted = [
+      ...widget.days
+    ];
+
+    sorted.sort(
+      (a, b) =>
+          b.dateKey.compareTo(
+        a.dateKey,
+      ),
+    );
 
     return CustomScrollView(
       slivers: [
         SliverAppBar.large(
           pinned: true,
-          title: const Text('Bitaniya Bible Study'),
+          title: const Text(
+            'Bitaniya Bible Study',
+          ),
           actions: [
             PopupMenuButton<String>(
               tooltip: 'More',
+              icon: const Icon(Icons.more_vert),
               onSelected: (value) {
                 switch (value) {
+                  case 'start':
+                    widget.onStartStudy();
+                    break;
+                  case 'search':
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => StudySearchScreen(days: widget.days),
+                    ));
+                    break;
+                  case 'calendar':
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => StudyCalendarScreen(days: widget.days),
+                    ));
+                    break;
+                  case 'characters':
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => CharacterLibraryScreen(days: widget.days),
+                    ));
+                    break;
+                  case 'bookmarks':
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => StudyLibraryScreen(days: widget.days, favoritesOnly: false),
+                    ));
+                    break;
                   case 'favorites':
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => StudyLibraryScreen(
-                          days: widget.days,
-                          favoritesOnly: true,
-                        ),
-                      ),
-                    );
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => StudyLibraryScreen(days: widget.days, favoritesOnly: true),
+                    ));
                     break;
                   case 'export':
                     _showStudyExport(context);
@@ -1340,7 +1399,48 @@ class _HomeScreenState extends State<HomeScreen> {
                     break;
                 }
               },
-              itemBuilder: (_) => const [
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: 'start',
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.play_arrow),
+                    title: Text("Start Today's Study"),
+                  ),
+                ),
+                PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 'search',
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.search),
+                    title: Text('Search Studies'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'calendar',
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.calendar_month),
+                    title: Text('Study Calendar'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'characters',
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.person_outline),
+                    title: Text('Character Library'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'bookmarks',
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.bookmark_border),
+                    title: Text('Bookmarks'),
+                  ),
+                ),
                 PopupMenuItem(
                   value: 'favorites',
                   child: ListTile(
@@ -1354,9 +1454,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: Icon(Icons.ios_share_outlined),
-                    title: Text('Export studies'),
+                    title: Text('Export Studies'),
                   ),
                 ),
+                PopupMenuDivider(),
                 PopupMenuItem(
                   value: 'settings',
                   child: ListTile(
@@ -1370,345 +1471,548 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
+          padding:
+              const EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            24,
+          ),
           sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              // Main welcome / continue card.
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+            delegate:
+                SliverChildListDelegate(
+              [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _TopProgressItem(
+                        icon: Icons.menu_book,
+                        value: '$studyChapterCount',
+                      ),
+                    ),
+                    Container(
+                      height: 34,
+                      width: 1,
+                      color: Theme.of(
+                        context,
+                      )
+                          .colorScheme
+                          .outlineVariant,
+                    ),
+                    Expanded(
+                      child: _TopProgressItem(
+                        icon:
+                            Icons.calendar_month,
+                        value:
+                            '$studyDays',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Card(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(22),
+                    onTap: widget.onStartStudy,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
                         children: [
                           Container(
-                            width: 46,
-                            height: 46,
+                            width: 42,
+                            height: 42,
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(14),
+                              color: Theme.of(context).colorScheme.primaryContainer,
+                              shape: BoxShape.circle,
                             ),
                             child: Icon(
-                              Icons.menu_book_rounded,
-                              color: theme.colorScheme.primary,
+                              Icons.menu_book_outlined,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Welcome back',
-                                  style: TextStyle(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  latest == null
-                                      ? 'Ready for today’s study?'
-                                      : 'Continue your Bible study',
-                                  style: const TextStyle(
-                                    fontSize: 19,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      if (latest != null) ...[
-                        Text(
-                          '${prettyStudyDate(latest.dateKey)} • ${latest.chapters.length} chapter${latest.chapters.length == 1 ? '' : 's'}',
-                          style: TextStyle(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: widget.onOpenStudy,
-                          icon: const Icon(Icons.edit_note_rounded),
-                          label: Text(latest == null ? 'START TODAY’S STUDY' : 'START TODAY’S STUDY'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // One compact stats card instead of repeated stat sections.
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _HomeStat(
-                          icon: Icons.calendar_month_outlined,
-                          value: '$studyDays',
-                          label: 'Study days',
-                        ),
-                      ),
-                      _homeDivider(context),
-                      Expanded(
-                        child: _HomeStat(
-                          icon: Icons.menu_book_outlined,
-                          value: '$studyChapterCount',
-                          label: 'Chapters',
-                        ),
-                      ),
-                      _homeDivider(context),
-                      Expanded(
-                        child: _HomeStat(
-                          icon: Icons.local_fire_department_outlined,
-                          value: '$streak',
-                          label: 'Day streak',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // Small, non-repetitive tools area.
-              Text(
-                'Quick access',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _HomeQuickAction(
-                      icon: Icons.search,
-                      label: 'Search',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => StudySearchScreen(days: widget.days),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _HomeQuickAction(
-                      icon: Icons.calendar_month_outlined,
-                      label: 'Calendar',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => StudyCalendarScreen(days: widget.days),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _HomeQuickAction(
-                      icon: Icons.bookmark_border,
-                      label: 'Bookmarks',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => StudyLibraryScreen(
-                            days: widget.days,
-                            favoritesOnly: false,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _HomeQuickAction(
-                      icon: Icons.person_outline,
-                      label: 'Characters',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => CharacterLibraryScreen(days: widget.days),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-
-              // New Testament progress gets one clean card.
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.auto_stories_outlined, color: theme.colorScheme.primary),
-                          const SizedBox(width: 10),
                           const Expanded(
                             child: Text(
-                              'New Testament reading',
-                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                              "Start Today's Study",
+                              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                             ),
                           ),
-                          IconButton(
-                            tooltip: 'Choose date',
-                            onPressed: pickReadingDate,
-                            icon: const Icon(Icons.calendar_today_outlined, size: 20),
-                          ),
-                          IconButton(
-                            tooltip: booksExpanded ? 'Hide books' : 'Show books',
-                            onPressed: () => setState(() => booksExpanded = !booksExpanded),
-                            icon: Icon(
-                              booksExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                            ),
-                          ),
+                          const Icon(Icons.chevron_right),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${(todayPercentage * 100).toStringAsFixed(1)}% • $totalReadToday / $totalNewTestamentChapters chapters',
-                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-                      ),
-                      const SizedBox(height: 10),
-                      LinearProgressIndicator(value: todayPercentage),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Reading date: ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.local_fire_department_outlined),
+                    title: const Text('Study streak', style: TextStyle(fontWeight: FontWeight.w700)),
+                    subtitle: Text('${calculateStudyStreak(widget.days)} consecutive day${calculateStudyStreak(widget.days) == 1 ? '' : 's'}'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => StudyCalendarScreen(days: widget.days))),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Expanded(child: _StatMini(label: 'Study days', value: '$studyDays')),
+                        Expanded(child: _StatMini(label: 'Chapters', value: '$studyChapterCount')),
+                        Expanded(child: _StatMini(label: 'Streak', value: '${calculateStudyStreak(widget.days)}')),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const SizedBox(height: 12),
+                Card(
+                  clipBehavior:
+                      Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            booksExpanded =
+                                !booksExpanded;
+                          });
+                        },
+                        child: Padding(
+                          padding:
+                              const EdgeInsets
+                                  .symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.menu_book,
+                              ),
+                              const SizedBox(
+                                width: 12,
+                              ),
+                              const Expanded(
+                                child: Text(
+                                  'New Testament',
+                                  style:
+                                      TextStyle(
+                                    fontSize: 18,
+                                    fontWeight:
+                                        FontWeight
+                                            .bold,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                booksExpanded
+                                    ? Icons
+                                        .keyboard_arrow_up
+                                    : Icons
+                                        .keyboard_arrow_down,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      if (booksExpanded) ...[
-                        const SizedBox(height: 12),
-                        ...newTestamentBooks.map(_buildBookCard),
-                      ],
+                      if (booksExpanded)
+                        ...newTestamentBooks.map(
+                          _buildBookCard,
+                        ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Recent studies',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                const SizedBox(
+                  height: 18,
+                ),
+                Card(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.all(
+                      16,
                     ),
-                  ),
-                  if (recent.isNotEmpty)
-                    Text(
-                      '${sorted.length} total',
-                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 9),
-
-              if (recent.isEmpty)
-                const _EmptyCard(
-                  icon: Icons.menu_book_outlined,
-                  title: 'No studies yet',
-                  message: 'Your saved studies will appear here.',
-                )
-              else
-                ...recent.map(
-                  (day) => _RecentStudyTile(
-                    day: day,
-                    formatDate: formatDate,
-                    onOpen: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => StandaloneDayEditor(
-                          day: day,
-                          onSave: widget.onOpenDay,
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.auto_stories,
+                            ),
+                            const SizedBox(
+                              width: 10,
+                            ),
+                            Expanded(
+                              child: Text(
+                                '${(todayPercentage * 100).toStringAsFixed(1)}% Completed',
+                                style:
+                                    const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight:
+                                      FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              tooltip:
+                                  'Choose date',
+                              onPressed:
+                                  pickReadingDate,
+                              icon:
+                                  const Icon(
+                                Icons
+                                    .calendar_month,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
+                        const SizedBox(
+                          height: 8,
+                        ),
+                        LinearProgressIndicator(
+                          value:
+                              todayPercentage,
+                          minHeight: 7,
+                        ),
+                        const SizedBox(
+                          height: 8,
+                        ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '$totalReadToday / '
+                                '$totalNewTestamentChapters',
+                                style:
+                                    const TextStyle(
+                                  fontWeight:
+                                      FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '${selectedDate.day}/'
+                              '${selectedDate.month}/'
+                              '${selectedDate.year}',
+                              style:
+                                  TextStyle(
+                                color: Theme.of(
+                                  context,
+                                )
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    onDelete: () => _confirmDelete(context, day),
                   ),
                 ),
-            ]),
+                const SizedBox(
+                  height: 22,
+                ),
+                const Text(
+                  'Your Study History',
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(
+                  height: 10,
+                ),
+                if (sorted.isEmpty)
+                  const _EmptyCard(
+                    icon: Icons
+                        .menu_book_outlined,
+                    title:
+                        'No studies yet',
+                    message:
+                        'Start your first Bible study from the Study tab.',
+                  )
+                else
+                  ...sorted.map(
+                    (day) => Card(
+                      margin:
+                          const EdgeInsets.only(
+                        bottom: 10,
+                      ),
+                      child: ListTile(
+                        contentPadding:
+                            const EdgeInsets
+                                .symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        leading:
+                            CircleAvatar(
+                          child: Text(
+                            '${day.chapters.length}',
+                          ),
+                        ),
+                        title: Text(
+                          formatDate(
+                            day.dateKey,
+                          ),
+                          style:
+                              const TextStyle(
+                            fontWeight:
+                                FontWeight.w700,
+                          ),
+                        ),
+                        subtitle: Text(
+                          day.chapters
+                              .map(
+                                (c) =>
+                                    c.reference,
+                              )
+                              .where(
+                                (x) =>
+                                    x.isNotEmpty,
+                              )
+                              .join(' • '),
+                          maxLines: 2,
+                          overflow:
+                              TextOverflow
+                                  .ellipsis,
+                        ),
+                        trailing:
+                            PopupMenuButton<
+                                String>(
+                          onSelected:
+                              (value) {
+                            if (value ==
+                                'delete') {
+                              _confirmDelete(
+                                context,
+                                day,
+                              );
+                            }
+                          },
+                          itemBuilder:
+                              (context) =>
+                                  const [
+                            PopupMenuItem(
+                              value:
+                                  'delete',
+                              child:
+                                  Text(
+                                'Delete',
+                              ),
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          Navigator.of(
+                            context,
+                          ).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  StandaloneDayEditor(
+                                day: day,
+                                onSave:
+                                    (updated) {
+                                  widget.onOpenDay(
+                                    updated,
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _homeDivider(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 34,
-      color: Theme.of(context).colorScheme.outlineVariant,
-    );
-  }
+  Widget _buildBookCard(
+    BibleBook book,
+  ) {
+    final read =
+        bookReadCount(book);
 
-  Widget _buildBookCard(BibleBook book) {
-    final read = bookReadCount(book);
-    final percentage = book.chapters == 0 ? 0.0 : read / book.chapters;
+    final percentage =
+        book.chapters == 0
+            ? 0.0
+            : read / book.chapters;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding:
+          const EdgeInsets.fromLTRB(
+        10,
+        0,
+        10,
+        8,
+      ),
       child: Card(
         child: ExpansionTile(
           initiallyExpanded: false,
-          leading: CircleAvatar(child: Text('$read', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
-          title: Text(book.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-          subtitle: Text('$read / ${book.chapters}'),
-          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          leading: CircleAvatar(
+            child: Text(
+              '$read',
+              style:
+                  const TextStyle(
+                fontSize: 13,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+          ),
+          title: Text(
+            book.name,
+            style:
+                const TextStyle(
+              fontWeight:
+                  FontWeight.w700,
+            ),
+          ),
+          subtitle: Text(
+            '$read / ${book.chapters}',
+          ),
+          childrenPadding:
+              const EdgeInsets.fromLTRB(
+            16,
+            0,
+            16,
+            16,
+          ),
           children: [
-            LinearProgressIndicator(value: percentage, minHeight: 5),
-            const SizedBox(height: 10),
+            LinearProgressIndicator(
+              value: percentage,
+              minHeight: 6,
+            ),
+            const SizedBox(
+              height: 12,
+            ),
             GridView.builder(
               shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              physics:
+                  const NeverScrollableScrollPhysics(),
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 4,
-                crossAxisSpacing: 7,
-                mainAxisSpacing: 7,
-                childAspectRatio: 1.45,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                childAspectRatio: 1.4,
               ),
-              itemCount: book.chapters,
-              itemBuilder: (context, index) {
-                final chapter = index + 1;
-                final id = '${book.name}|$chapter';
-                final isRead = todayRead.contains(id);
+              itemCount:
+                  book.chapters,
+              itemBuilder:
+                  (context, index) {
+                final chapter =
+                    index + 1;
+
+                final id =
+                    '${book.name}|$chapter';
+
+                final isRead =
+                    todayRead.contains(
+                  id,
+                );
 
                 return InkWell(
-                  borderRadius: BorderRadius.circular(9),
-                  onTap: () => toggleChapter(book, chapter),
+                  borderRadius:
+                      BorderRadius.circular(
+                    10,
+                  ),
+                  onTap: () {
+                    toggleChapter(
+                      book,
+                      chapter,
+                    );
+                  },
                   child: Container(
-                    decoration: BoxDecoration(
+                    decoration:
+                        BoxDecoration(
                       color: isRead
-                          ? themeOf(context).primary
-                          : themeOf(context).surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(9),
-                      border: Border.all(
-                        color: themeOf(context).outline.withOpacity(.3),
+                          ? Theme.of(
+                              context,
+                            )
+                              .colorScheme
+                              .primary
+                          : Theme.of(
+                              context,
+                            )
+                              .colorScheme
+                              .surfaceContainerHighest,
+                      borderRadius:
+                          BorderRadius.circular(
+                        10,
+                      ),
+                      border:
+                          Border.all(
+                        color: isRead
+                            ? Theme.of(
+                                context,
+                              )
+                                .colorScheme
+                                .primary
+                            : Theme.of(
+                                context,
+                              )
+                                .colorScheme
+                                .outline
+                                .withOpacity(
+                                  0.3,
+                                ),
                       ),
                     ),
                     child: Center(
-                      child: Text(
-                        'Ch. $chapter',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: isRead ? themeOf(context).onPrimary : null,
-                        ),
+                      child: Column(
+                        mainAxisAlignment:
+                            MainAxisAlignment
+                                .center,
+                        children: [
+                          Icon(
+                            isRead
+                                ? Icons
+                                    .check_circle
+                                : Icons
+                                    .circle_outlined,
+                            size: 20,
+                            color: isRead
+                                ? Theme.of(
+                                    context,
+                                  )
+                                    .colorScheme
+                                    .onPrimary
+                                : Theme.of(
+                                    context,
+                                  )
+                                    .colorScheme
+                                    .onSurface,
+                          ),
+                          const SizedBox(
+                            height: 3,
+                          ),
+                          Text(
+                            'Ch. $chapter',
+                            style:
+                                TextStyle(
+                              fontSize: 12,
+                              fontWeight:
+                                  FontWeight
+                                      .bold,
+                              color: isRead
+                                  ? Theme.of(
+                                      context,
+                                    )
+                                      .colorScheme
+                                      .onPrimary
+                                  : null,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -1721,160 +2025,53 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  ColorScheme themeOf(BuildContext context) => Theme.of(context).colorScheme;
-
-  Future<void> _confirmDelete(BuildContext context, StudyDay day) async {
-    final answer = await showDialog<bool>(
+  Future<void> _confirmDelete(
+    BuildContext context,
+    StudyDay day,
+  ) async {
+    final answer =
+        await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete study?'),
-        content: Text('Delete the study for ${formatDate(day.dateKey)}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text(
+            'Delete study?',
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Delete'),
+          content: Text(
+            'Delete the study for '
+            '${formatDate(day.dateKey)}?',
           ),
-        ],
-      ),
-    );
-
-    if (answer == true) widget.onDeleteDay(day.dateKey);
-  }
-}
-
-class _HomeStat extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
-
-  const _HomeStat({
-    required this.icon,
-    required this.value,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.primary;
-    return Column(
-      children: [
-        Icon(icon, size: 21, color: color),
-        const SizedBox(height: 5),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 11,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _HomeQuickAction extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _HomeQuickAction({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(.55),
-      borderRadius: BorderRadius.circular(15),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(15),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 5),
-          child: Column(
-            children: [
-              Icon(icon, size: 21),
-              const SizedBox(height: 5),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RecentStudyTile extends StatelessWidget {
-  final StudyDay day;
-  final String Function(String) formatDate;
-  final VoidCallback onOpen;
-  final VoidCallback onDelete;
-
-  const _RecentStudyTile({
-    required this.day,
-    required this.formatDate,
-    required this.onOpen,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final refs = day.chapters
-        .map((c) => c.reference.trim())
-        .where((x) => x.isNotEmpty)
-        .join(' • ');
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 9),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
-        leading: CircleAvatar(
-          radius: 21,
-          child: Text(
-            '${day.chapters.length}',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-        title: Text(
-          formatDate(day.dateKey),
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-        subtitle: Text(
-          refs.isEmpty ? 'Bible study' : refs,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) {
-            if (value == 'delete') onDelete();
-          },
-          itemBuilder: (_) => const [
-            PopupMenuItem(
-              value: 'delete',
-              child: Text('Delete'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(
+                  dialogContext,
+                  false,
+                );
+              },
+              child:
+                  const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(
+                  dialogContext,
+                  true,
+                );
+              },
+              child:
+                  const Text('Delete'),
             ),
           ],
-        ),
-        onTap: onOpen,
-      ),
+        );
+      },
     );
+
+    if (answer == true) {
+      widget.onDeleteDay(
+        day.dateKey,
+      );
+    }
   }
 }
 
@@ -2042,47 +2239,6 @@ class _StatMini extends StatelessWidget {
   const _StatMini({required this.label, required this.value});
   @override
   Widget build(BuildContext context) => Column(children: [Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)), const SizedBox(height: 3), Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))]);
-}
-
-// ============================================================
-// DASHBOARD QUICK ACTIONS
-// ============================================================
-
-class _DashboardQuickActions extends StatelessWidget {
-  final List<StudyDay> days;
-  final VoidCallback onSearch;
-  final VoidCallback onBookmarks;
-  final VoidCallback onFavorites;
-  final VoidCallback onCalendar;
-  final VoidCallback onCharacters;
-  final VoidCallback onExport;
-
-  const _DashboardQuickActions({required this.days, required this.onSearch, required this.onBookmarks, required this.onFavorites, required this.onCalendar, required this.onCharacters, required this.onExport});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _quick(context, Icons.search, 'Search', onSearch),
-            _quick(context, Icons.bookmark_border, 'Bookmarks', onBookmarks),
-            _quick(context, Icons.star_border, 'Favorites', onFavorites),
-            _quick(context, Icons.calendar_month, 'Calendar', onCalendar),
-            _quick(context, Icons.person_outline, 'Characters', onCharacters),
-            _quick(context, Icons.ios_share_outlined, 'Export', onExport),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _quick(BuildContext context, IconData icon, String label, VoidCallback onTap) {
-    return ActionChip(avatar: Icon(icon, size: 18), label: Text(label), onPressed: onTap);
-  }
 }
 
 // ============================================================
