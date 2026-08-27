@@ -993,6 +993,17 @@ class _AppShellState extends State<AppShell> {
             currentIndex = 1;
           });
         },
+        onOpenReadingTracker: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => NewTestamentTrackerScreen(
+                onChanged: () {
+                  setState(() {});
+                },
+              ),
+            ),
+          );
+        },
         onOpenSettings: () {
           Navigator.of(context).push(
             MaterialPageRoute(
@@ -1072,6 +1083,7 @@ class HomeScreen extends StatefulWidget {
   final void Function(String dateKey) onDeleteDay;
   final VoidCallback onOpenSettings;
   final VoidCallback onOpenStudy;
+  final VoidCallback onOpenReadingTracker;
 
   const HomeScreen({
     super.key,
@@ -1080,6 +1092,7 @@ class HomeScreen extends StatefulWidget {
     required this.onDeleteDay,
     required this.onOpenSettings,
     required this.onOpenStudy,
+    required this.onOpenReadingTracker,
   });
 
   @override
@@ -1112,9 +1125,9 @@ class _HomeScreenState extends State<HomeScreen> {
         (sum, day) => sum + day.chapters.length,
       );
 
-  int get totalRead => progress.values.fold<int>(
+  int get totalRead => newTestamentBooks.fold<int>(
         0,
-        (sum, chapters) => sum + chapters.length,
+        (sum, book) => sum + (progress[book.name]?.length ?? 0),
       );
 
   double get ntPercentage => totalNewTestamentChapters == 0
@@ -1427,7 +1440,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Row(
                       children: [
                         Expanded(child: Text('$totalRead / $totalNewTestamentChapters chapters', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant))),
-                        TextButton(onPressed: widget.onOpenStudy, child: const Text('View')),
+                        TextButton(onPressed: widget.onOpenReadingTracker, child: const Text('View')),
                       ],
                     ),
                   ],
@@ -1518,6 +1531,195 @@ class _CompactStat extends StatelessWidget {
 class _VerticalRule extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(height: 32, width: 1, color: Theme.of(context).colorScheme.outlineVariant);
+}
+
+// ============================================================
+// NEW TESTAMENT READING TRACKER
+// ============================================================
+
+class NewTestamentTrackerScreen extends StatefulWidget {
+  final VoidCallback? onChanged;
+
+  const NewTestamentTrackerScreen({super.key, this.onChanged});
+
+  @override
+  State<NewTestamentTrackerScreen> createState() =>
+      _NewTestamentTrackerScreenState();
+}
+
+class _NewTestamentTrackerScreenState
+    extends State<NewTestamentTrackerScreen> {
+  Map<String, Set<String>> progress = {};
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final data = await ReadingStorage.load();
+    if (!mounted) return;
+    setState(() {
+      progress = data;
+      loading = false;
+    });
+  }
+
+  int get totalRead => newTestamentBooks.fold<int>(
+        0,
+        (sum, book) => sum + (progress[book.name]?.length ?? 0),
+      );
+
+  Future<void> _toggleChapter(BibleBook book, int chapter) async {
+    final key = chapter.toString();
+    final set = progress.putIfAbsent(book.name, () => <String>{});
+    set.contains(key) ? set.remove(key) : set.add(key);
+    await ReadingStorage.save(progress);
+    if (!mounted) return;
+    setState(() {});
+    widget.onChanged?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final percentage = totalNewTestamentChapters == 0
+        ? 0.0
+        : (totalRead / totalNewTestamentChapters).clamp(0.0, 1.0);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('New Testament Tracker'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.auto_stories_outlined),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'New Testament',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${(percentage * 100).round()}%',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                LinearProgressIndicator(value: percentage),
+                const SizedBox(height: 8),
+                Text(
+                  '$totalRead of $totalNewTestamentChapters chapters studied',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'BIBLE BOOKS',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...newTestamentBooks.map((book) {
+            final completed = progress[book.name]?.length ?? 0;
+            return Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              clipBehavior: Clip.antiAlias,
+              child: ExpansionTile(
+                leading: const Icon(Icons.menu_book_outlined),
+                title: Text(
+                  book.name,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: Text('$completed / ${book.chapters} chapters'),
+                childrenPadding:
+                    const EdgeInsets.fromLTRB(12, 0, 12, 14),
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: List.generate(book.chapters, (index) {
+                      final chapter = index + 1;
+                      final selected =
+                          progress[book.name]?.contains('$chapter') ?? false;
+
+                      return InkWell(
+                        onTap: () => _toggleChapter(book, chapter),
+                        borderRadius: BorderRadius.circular(10),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          width: 44,
+                          height: 44,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '$chapter',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: selected
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .onPrimary
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .onSurface,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
 }
 
 // ============================================================
