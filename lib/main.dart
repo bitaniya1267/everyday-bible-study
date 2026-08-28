@@ -3148,6 +3148,52 @@ class _RichStudyFieldState
             // the Material 3 selected-button background.
             buttonOptions: QuillSimpleToolbarButtonOptions(
               bold: QuillToolbarToggleStyleButtonOptions(
+                // Give the Bold button its own selected-state theme.
+                // The toolbar's base theme is not reliably passed to the
+                // custom toggle builder on Android.
+                iconTheme: QuillIconTheme(
+                  iconButtonSelectedData: IconButtonData(
+                    color: Theme.of(context).colorScheme.primary,
+                    iconSize: 17,
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    style: ButtonStyle(
+                      fixedSize: WidgetStateProperty.all(const Size(28, 28)),
+                      minimumSize: WidgetStateProperty.all(const Size(28, 28)),
+                      maximumSize: WidgetStateProperty.all(const Size(28, 28)),
+                      backgroundColor: WidgetStateProperty.all(
+                        Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                      ),
+                      foregroundColor: WidgetStateProperty.all(
+                        Theme.of(context).colorScheme.primary,
+                      ),
+                      overlayColor: WidgetStateProperty.all(Colors.transparent),
+                      shadowColor: WidgetStateProperty.all(Colors.transparent),
+                      surfaceTintColor: WidgetStateProperty.all(Colors.transparent),
+                      shape: WidgetStateProperty.all(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                  ),
+                  iconButtonUnselectedData: IconButtonData(
+                    color: Theme.of(context).colorScheme.primary,
+                    iconSize: 17,
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    style: ButtonStyle(
+                      fixedSize: WidgetStateProperty.all(const Size(28, 28)),
+                      minimumSize: WidgetStateProperty.all(const Size(28, 28)),
+                      maximumSize: WidgetStateProperty.all(const Size(28, 28)),
+                      backgroundColor: WidgetStateProperty.all(Colors.transparent),
+                      foregroundColor: WidgetStateProperty.all(
+                        Theme.of(context).colorScheme.primary,
+                      ),
+                      overlayColor: WidgetStateProperty.all(Colors.transparent),
+                    ),
+                  ),
+                ),
                 childBuilder: (options, extraOptions) {
                   final originalOnPressed = extraOptions.onPressed;
                   return defaultToggleStyleButtonBuilder(
