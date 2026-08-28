@@ -3190,7 +3190,7 @@ class _RichStudyFieldState
                     extraOptions.context,
                     Attribute.bold,
                     options.iconData ?? Icons.format_bold,
-                    extraOptions.currentValue,
+                    controller.getSelectionStyle().attributes.containsKey(Attribute.bold.key),
                     originalOnPressed == null
                         ? null
                         : () {
