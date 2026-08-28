@@ -1323,16 +1323,35 @@ class _HomeScreenState extends State<HomeScreen> {
               onSelected: (value) {
                 switch (value) {
                   case 'search':
-                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => StudySearchScreen(days: widget.days)));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => StudySearchScreen(days: widget.days),
+                      ),
+                    );
                     break;
                   case 'calendar':
-                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => StudyCalendarScreen(days: widget.days)));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => StudyCalendarScreen(days: widget.days),
+                      ),
+                    );
                     break;
                   case 'bookmarks':
-                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => StudyLibraryScreen(days: widget.days, favoritesOnly: false)));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => StudyLibraryScreen(
+                          days: widget.days,
+                          favoritesOnly: false,
+                        ),
+                      ),
+                    );
                     break;
                   case 'characters':
-                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => CharacterLibraryScreen(days: widget.days)));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => CharacterLibraryScreen(days: widget.days),
+                      ),
+                    );
                     break;
                   case 'favorites':
                     Navigator.of(context).push(
@@ -1355,19 +1374,35 @@ class _HomeScreenState extends State<HomeScreen> {
               itemBuilder: (_) => const [
                 PopupMenuItem(
                   value: 'search',
-                  child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.search), title: Text('Search studies')),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.search),
+                    title: Text('Search studies'),
+                  ),
                 ),
                 PopupMenuItem(
                   value: 'calendar',
-                  child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.calendar_month_outlined), title: Text('Study calendar')),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.calendar_month_outlined),
+                    title: Text('Study calendar'),
+                  ),
                 ),
                 PopupMenuItem(
                   value: 'bookmarks',
-                  child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.bookmark_border), title: Text('Bookmarks')),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.bookmark_border),
+                    title: Text('Bookmarks'),
+                  ),
                 ),
                 PopupMenuItem(
                   value: 'characters',
-                  child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.person_outline), title: Text('Character library')),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.person_outline),
+                    title: Text('Character library'),
+                  ),
                 ),
                 PopupMenuItem(
                   value: 'favorites',
@@ -2967,18 +3002,23 @@ class _RichStudyFieldState
     extends State<RichStudyField> {
   late QuillController controller;
   late final FocusNode _fieldFocusNode;
+  late final ScrollController _editorScrollController;
 
   bool _showFormattingToolbar = false;
   bool _toolbarPointerDown = false;
-  TextSelection? _savedFormattingSelection;
   Timer? _hideToolbarTimer;
   Timer? _saveTimer;
+
+  // Keep the last real text selection so a toolbar button (especially
+  // Bold) cannot lose the selected range when the toolbar takes focus.
+  TextSelection? _lastTextSelection;
 
   @override
   void initState() {
     super.initState();
 
     _fieldFocusNode = FocusNode();
+    _editorScrollController = ScrollController();
     _fieldFocusNode.addListener(_handleFocusChange);
 
     final document = documentFromStoredValue(
@@ -2993,6 +3033,11 @@ class _RichStudyFieldState
             ? document.length - 1
             : 0,
       ),
+      onSelectionChanged: (selection) {
+        if (!selection.isCollapsed) {
+          _lastTextSelection = selection;
+        }
+      },
     );
 
     controller.addListener(_changed);
@@ -3038,14 +3083,17 @@ class _RichStudyFieldState
     _hideToolbarTimer?.cancel();
     _toolbarPointerDown = true;
 
-    // Android can move/collapse the editor selection when the toolbar
-    // receives the touch. Save the selection before that happens so the
-    // Bold button can restore it before Quill formats the text.
-    final selection = controller.selection;
-    if (!selection.isCollapsed &&
-        selection.start >= 0 &&
-        selection.end <= controller.document.length) {
-      _savedFormattingSelection = selection;
+    // Restore the user's text selection before Quill processes the
+    // toolbar button tap. This keeps Bold applying to the selected
+    // text instead of to an empty/collapsed cursor.
+    final savedSelection = _lastTextSelection;
+    if (savedSelection != null &&
+        !savedSelection.isCollapsed &&
+        savedSelection.end <= controller.document.length) {
+      controller.updateSelection(
+        savedSelection,
+        ChangeSource.local,
+      );
     }
 
     if (mounted && !_showFormattingToolbar) {
@@ -3116,6 +3164,7 @@ class _RichStudyFieldState
 
     _fieldFocusNode.removeListener(_handleFocusChange);
     _fieldFocusNode.dispose();
+    _editorScrollController.dispose();
 
     super.dispose();
   }
@@ -3147,81 +3196,6 @@ class _RichStudyFieldState
             // only on QuillSimpleToolbarConfig does not reliably override
             // the Material 3 selected-button background.
             buttonOptions: QuillSimpleToolbarButtonOptions(
-              bold: QuillToolbarToggleStyleButtonOptions(
-                // Give the Bold button its own selected-state theme.
-                // The toolbar's base theme is not reliably passed to the
-                // custom toggle builder on Android.
-                iconTheme: QuillIconTheme(
-                  iconButtonSelectedData: IconButtonData(
-                    color: Theme.of(context).colorScheme.primary,
-                    iconSize: 17,
-                    padding: EdgeInsets.zero,
-                    visualDensity: VisualDensity.compact,
-                    style: ButtonStyle(
-                      fixedSize: WidgetStateProperty.all(const Size(28, 28)),
-                      minimumSize: WidgetStateProperty.all(const Size(28, 28)),
-                      maximumSize: WidgetStateProperty.all(const Size(28, 28)),
-                      backgroundColor: WidgetStateProperty.all(
-                        Theme.of(context).colorScheme.primary.withOpacity(0.12),
-                      ),
-                      foregroundColor: WidgetStateProperty.all(
-                        Theme.of(context).colorScheme.primary,
-                      ),
-                      overlayColor: WidgetStateProperty.all(Colors.transparent),
-                      shadowColor: WidgetStateProperty.all(Colors.transparent),
-                      surfaceTintColor: WidgetStateProperty.all(Colors.transparent),
-                      shape: WidgetStateProperty.all(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                    ),
-                  ),
-                  iconButtonUnselectedData: IconButtonData(
-                    color: Theme.of(context).colorScheme.primary,
-                    iconSize: 17,
-                    padding: EdgeInsets.zero,
-                    visualDensity: VisualDensity.compact,
-                    style: ButtonStyle(
-                      fixedSize: WidgetStateProperty.all(const Size(28, 28)),
-                      minimumSize: WidgetStateProperty.all(const Size(28, 28)),
-                      maximumSize: WidgetStateProperty.all(const Size(28, 28)),
-                      backgroundColor: WidgetStateProperty.all(Colors.transparent),
-                      foregroundColor: WidgetStateProperty.all(
-                        Theme.of(context).colorScheme.primary,
-                      ),
-                      overlayColor: WidgetStateProperty.all(Colors.transparent),
-                    ),
-                  ),
-                ),
-                childBuilder: (options, extraOptions) {
-                  final originalOnPressed = extraOptions.onPressed;
-                  return defaultToggleStyleButtonBuilder(
-                    extraOptions.context,
-                    Attribute.bold,
-                    options.iconData ?? Icons.format_bold,
-                    controller.getSelectionStyle().attributes.containsKey(Attribute.bold.key),
-                    originalOnPressed == null
-                        ? null
-                        : () {
-                            final saved = _savedFormattingSelection;
-                            if (saved != null &&
-                                saved.start >= 0 &&
-                                saved.end <= controller.document.length) {
-                              controller.updateSelection(
-                                saved,
-                                ChangeSource.local,
-                              );
-                            }
-                            originalOnPressed();
-                          },
-                    options.afterButtonPressed,
-                    options.iconSize ?? 17,
-                    options.iconButtonFactor ?? 1.0,
-                    options.iconTheme,
-                  );
-                },
-              ),
               base: QuillToolbarBaseButtonOptions(
                 iconSize: 17,
                 iconButtonFactor: 1.0,
@@ -3231,10 +3205,6 @@ class _RichStudyFieldState
                     padding: EdgeInsets.zero,
                     visualDensity: VisualDensity.compact,
                     style: ButtonStyle(
-                      // Keep the selected formatting button compact so the
-                      // purple selection indicator cannot cover the icon.
-                      fixedSize: WidgetStateProperty.all(const Size(28, 28)),
-                      maximumSize: WidgetStateProperty.all(const Size(28, 28)),
                       backgroundColor: WidgetStateProperty.all(
                         Theme.of(context).colorScheme.primary.withOpacity(0.12),
                       ),
@@ -3280,11 +3250,7 @@ class _RichStudyFieldState
             // One compact row greatly reduces the delay when the
             // toolbar first appears, while keeping the formatting
             // controls available.
-            // Android: use the normal toolbar layout instead of the
-            // arrow-indicated horizontal viewport. The latter can render
-            // a large gray overlay over the formatting buttons on phones.
-            // The compact 17px icons still fit in one row on the study field.
-            multiRowsDisplay: true,
+            multiRowsDisplay: false,
 
             showFontFamily: false,
             showFontSize: false,
@@ -3368,37 +3334,65 @@ class _RichStudyFieldState
                 if (_showFormattingToolbar)
                   _buildToolbar(context, isDark),
 
-                Container(
-                  constraints: BoxConstraints(
-                    minHeight: widget.minLines * 20.0,
-                    maxHeight: widget.maxLines * 30.0,
-                  ),
-                  padding:
-                      const EdgeInsets.all(12),
-                  child: QuillEditor.basic(
-                    controller: controller,
-                    focusNode: _fieldFocusNode,
-                    config: QuillEditorConfig(
-                      // The study question/hint is only shown while
-                      // this writing field is active.
-                      placeholder:
-                          _showFormattingToolbar
+                if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
+                  SizedBox(
+                    height: widget.maxLines * 30.0 + 24.0,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: QuillEditor.basic(
+                        controller: controller,
+                        focusNode: _fieldFocusNode,
+                        scrollController: _editorScrollController,
+                        config: QuillEditorConfig(
+                          placeholder: _showFormattingToolbar
                               ? widget.hint
                               : null,
-                      padding: EdgeInsets.zero,
-                      expands: false,
-                      autoFocus: false,
-                      scrollable: true,
-                      showCursor: true,
-                      enableInteractiveSelection: true,
-                      enableSelectionToolbar: true,
-
-                      // Do not let Quill's outside-tap handling steal
-                      // focus when a toolbar button is pressed.
-                      onTapOutsideEnabled: false,
+                          padding: EdgeInsets.zero,
+                          expands: false,
+                          autoFocus: false,
+                          scrollable: true,
+                          minHeight: widget.minLines * 20.0,
+                          maxHeight: widget.maxLines * 30.0,
+                          scrollPhysics: const ClampingScrollPhysics(),
+                          showCursor: true,
+                          enableInteractiveSelection: true,
+                          enableSelectionToolbar: true,
+                          onTapOutsideEnabled: false,
+                          onTapDown: (details, getPositionForOffset) {
+                            if (!_fieldFocusNode.hasFocus) {
+                              _fieldFocusNode.requestFocus();
+                            }
+                            return false;
+                          },
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    constraints: BoxConstraints(
+                      minHeight: widget.minLines * 20.0,
+                      maxHeight: widget.maxLines * 30.0,
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: QuillEditor.basic(
+                      controller: controller,
+                      focusNode: _fieldFocusNode,
+                      config: QuillEditorConfig(
+                        placeholder: _showFormattingToolbar
+                            ? widget.hint
+                            : null,
+                        padding: EdgeInsets.zero,
+                        expands: false,
+                        autoFocus: false,
+                        scrollable: true,
+                        showCursor: true,
+                        enableInteractiveSelection: true,
+                        enableSelectionToolbar: true,
+                        onTapOutsideEnabled: false,
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
