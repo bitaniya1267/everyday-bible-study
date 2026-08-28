@@ -3230,7 +3230,11 @@ class _RichStudyFieldState
             // One compact row greatly reduces the delay when the
             // toolbar first appears, while keeping the formatting
             // controls available.
-            multiRowsDisplay: false,
+            // Android: use the normal toolbar layout instead of the
+            // arrow-indicated horizontal viewport. The latter can render
+            // a large gray overlay over the formatting buttons on phones.
+            // The compact 17px icons still fit in one row on the study field.
+            multiRowsDisplay: true,
 
             showFontFamily: false,
             showFontSize: false,
