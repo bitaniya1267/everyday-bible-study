@@ -1322,6 +1322,37 @@ class _HomeScreenState extends State<HomeScreen> {
               tooltip: 'More',
               onSelected: (value) {
                 switch (value) {
+                  case 'search':
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => StudySearchScreen(days: widget.days),
+                      ),
+                    );
+                    break;
+                  case 'calendar':
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => StudyCalendarScreen(days: widget.days),
+                      ),
+                    );
+                    break;
+                  case 'bookmarks':
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => StudyLibraryScreen(
+                          days: widget.days,
+                          favoritesOnly: false,
+                        ),
+                      ),
+                    );
+                    break;
+                  case 'characters':
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => CharacterLibraryScreen(days: widget.days),
+                      ),
+                    );
+                    break;
                   case 'favorites':
                     Navigator.of(context).push(
                       MaterialPageRoute(
@@ -1341,6 +1372,38 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
               },
               itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'search',
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.search),
+                    title: Text('Search studies'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'calendar',
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.calendar_month_outlined),
+                    title: Text('Study calendar'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'bookmarks',
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.bookmark_border),
+                    title: Text('Bookmarks'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'characters',
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.person_outline),
+                    title: Text('Character library'),
+                  ),
+                ),
                 PopupMenuItem(
                   value: 'favorites',
                   child: ListTile(
@@ -1480,70 +1543,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 14),
-
-              // Small, non-repetitive tools area.
-              Text(
-                'Quick access',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _HomeQuickAction(
-                      icon: Icons.search,
-                      label: 'Search',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => StudySearchScreen(days: widget.days),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _HomeQuickAction(
-                      icon: Icons.calendar_month_outlined,
-                      label: 'Calendar',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => StudyCalendarScreen(days: widget.days),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _HomeQuickAction(
-                      icon: Icons.bookmark_border,
-                      label: 'Bookmarks',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => StudyLibraryScreen(
-                            days: widget.days,
-                            favoritesOnly: false,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _HomeQuickAction(
-                      icon: Icons.person_outline,
-                      label: 'Characters',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => CharacterLibraryScreen(days: widget.days),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
 
               // New Testament progress gets one clean card.
               Card(
