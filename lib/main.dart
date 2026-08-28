@@ -2037,45 +2037,11 @@ class SettingsScreen
 }
 
 class _StatMini extends StatelessWidget {
-  final IconData icon;
   final String label;
   final String value;
-
-  const _StatMini({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
+  const _StatMini({required this.label, required this.value});
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          label,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Column(children: [Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)), const SizedBox(height: 3), Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))]);
 }
 
 // ============================================================
@@ -3040,9 +3006,12 @@ class _RichStudyFieldState
 
   bool _showFormattingToolbar = false;
   bool _toolbarPointerDown = false;
-  TextSelection? _savedToolbarSelection;
   Timer? _hideToolbarTimer;
   Timer? _saveTimer;
+
+  // Keep the last real text selection so a toolbar button (especially
+  // Bold) cannot lose the selected range when the toolbar takes focus.
+  TextSelection? _lastTextSelection;
 
   @override
   void initState() {
@@ -3063,6 +3032,11 @@ class _RichStudyFieldState
             ? document.length - 1
             : 0,
       ),
+      onSelectionChanged: (selection) {
+        if (!selection.isCollapsed) {
+          _lastTextSelection = selection;
+        }
+      },
     );
 
     controller.addListener(_changed);
@@ -3107,22 +3081,19 @@ class _RichStudyFieldState
   void _toolbarPointerDownHandler(PointerDownEvent event) {
     _hideToolbarTimer?.cancel();
     _toolbarPointerDown = true;
-    // Preserve the selected text before the toolbar button can take focus.
-    // On Web, losing editor focus can otherwise collapse the selection,
-    // causing Bold (and other inline formats) to apply to nothing.
-    _savedToolbarSelection = controller.selection;
 
-    // Restore it immediately, before the toolbar button's own gesture
-    // runs. This is the important part: the button must see the original
-    // selected range rather than a collapsed selection.
-    final savedSelection = _savedToolbarSelection;
-    if (savedSelection != null && savedSelection.isValid) {
+    // Restore the user's text selection before Quill processes the
+    // toolbar button tap. This keeps Bold applying to the selected
+    // text instead of to an empty/collapsed cursor.
+    final savedSelection = _lastTextSelection;
+    if (savedSelection != null &&
+        !savedSelection.isCollapsed &&
+        savedSelection.end <= controller.document.length) {
       controller.updateSelection(
         savedSelection,
         ChangeSource.local,
       );
     }
-    _fieldFocusNode.requestFocus();
 
     if (mounted && !_showFormattingToolbar) {
       setState(() {
@@ -3144,17 +3115,6 @@ class _RichStudyFieldState
           if (!mounted || _toolbarPointerDown) return;
 
           _fieldFocusNode.requestFocus();
-
-          // Restore the exact text selection that existed before the
-          // toolbar was pressed, then let Quill apply the button action
-          // to that selection.
-          final savedSelection = _savedToolbarSelection;
-          if (savedSelection != null && savedSelection.isValid) {
-            controller.updateSelection(
-              savedSelection,
-              ChangeSource.local,
-            );
-          }
 
           if (!_showFormattingToolbar) {
             setState(() {
