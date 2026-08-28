@@ -1322,37 +1322,6 @@ class _HomeScreenState extends State<HomeScreen> {
               tooltip: 'More',
               onSelected: (value) {
                 switch (value) {
-                  case 'search':
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => StudySearchScreen(days: widget.days),
-                      ),
-                    );
-                    break;
-                  case 'calendar':
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => StudyCalendarScreen(days: widget.days),
-                      ),
-                    );
-                    break;
-                  case 'bookmarks':
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => StudyLibraryScreen(
-                          days: widget.days,
-                          favoritesOnly: false,
-                        ),
-                      ),
-                    );
-                    break;
-                  case 'characters':
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => CharacterLibraryScreen(days: widget.days),
-                      ),
-                    );
-                    break;
                   case 'favorites':
                     Navigator.of(context).push(
                       MaterialPageRoute(
@@ -1372,38 +1341,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
               },
               itemBuilder: (_) => const [
-                PopupMenuItem(
-                  value: 'search',
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.search),
-                    title: Text('Search studies'),
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'calendar',
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.calendar_month_outlined),
-                    title: Text('Study calendar'),
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'bookmarks',
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.bookmark_border),
-                    title: Text('Bookmarks'),
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'characters',
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.person_outline),
-                    title: Text('Character library'),
-                  ),
-                ),
                 PopupMenuItem(
                   value: 'favorites',
                   child: ListTile(
@@ -1543,6 +1480,70 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 14),
+
+              // Small, non-repetitive tools area.
+              Text(
+                'Quick access',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _HomeQuickAction(
+                      icon: Icons.search,
+                      label: 'Search',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => StudySearchScreen(days: widget.days),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _HomeQuickAction(
+                      icon: Icons.calendar_month_outlined,
+                      label: 'Calendar',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => StudyCalendarScreen(days: widget.days),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _HomeQuickAction(
+                      icon: Icons.bookmark_border,
+                      label: 'Bookmarks',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => StudyLibraryScreen(
+                            days: widget.days,
+                            favoritesOnly: false,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _HomeQuickAction(
+                      icon: Icons.person_outline,
+                      label: 'Characters',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => CharacterLibraryScreen(days: widget.days),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
 
               // New Testament progress gets one clean card.
               Card(
@@ -3039,9 +3040,9 @@ class _RichStudyFieldState
 
   bool _showFormattingToolbar = false;
   bool _toolbarPointerDown = false;
+  TextSelection? _savedToolbarSelection;
   Timer? _hideToolbarTimer;
   Timer? _saveTimer;
-  TextSelection? _lastSelection;
 
   @override
   void initState() {
@@ -3064,10 +3065,6 @@ class _RichStudyFieldState
       ),
     );
 
-    _lastSelection = controller.selection;
-    controller.onSelectionChanged = (selection) {
-      _lastSelection = selection;
-    };
     controller.addListener(_changed);
   }
 
@@ -3110,6 +3107,22 @@ class _RichStudyFieldState
   void _toolbarPointerDownHandler(PointerDownEvent event) {
     _hideToolbarTimer?.cancel();
     _toolbarPointerDown = true;
+    // Preserve the selected text before the toolbar button can take focus.
+    // On Web, losing editor focus can otherwise collapse the selection,
+    // causing Bold (and other inline formats) to apply to nothing.
+    _savedToolbarSelection = controller.selection;
+
+    // Restore it immediately, before the toolbar button's own gesture
+    // runs. This is the important part: the button must see the original
+    // selected range rather than a collapsed selection.
+    final savedSelection = _savedToolbarSelection;
+    if (savedSelection != null && savedSelection.isValid) {
+      controller.updateSelection(
+        savedSelection,
+        ChangeSource.local,
+      );
+    }
+    _fieldFocusNode.requestFocus();
 
     if (mounted && !_showFormattingToolbar) {
       setState(() {
@@ -3131,6 +3144,17 @@ class _RichStudyFieldState
           if (!mounted || _toolbarPointerDown) return;
 
           _fieldFocusNode.requestFocus();
+
+          // Restore the exact text selection that existed before the
+          // toolbar was pressed, then let Quill apply the button action
+          // to that selection.
+          final savedSelection = _savedToolbarSelection;
+          if (savedSelection != null && savedSelection.isValid) {
+            controller.updateSelection(
+              savedSelection,
+              ChangeSource.local,
+            );
+          }
 
           if (!_showFormattingToolbar) {
             setState(() {
@@ -3210,57 +3234,6 @@ class _RichStudyFieldState
             // only on QuillSimpleToolbarConfig does not reliably override
             // the Material 3 selected-button background.
             buttonOptions: QuillSimpleToolbarButtonOptions(
-              bold: QuillToolbarToggleStyleButtonOptions(
-                iconSize: 17,
-                iconButtonFactor: 1.0,
-                childBuilder: (options, extra) {
-                  return IconButton(
-                    tooltip: 'Bold',
-                    onPressed: () {
-                      final selection =
-                          _lastSelection ?? extra.controller.selection;
-
-                      if (selection.start != selection.end) {
-                        extra.controller.updateSelection(
-                          selection,
-                          ChangeSource.local,
-                        );
-                      }
-
-                      final isBold = extra.controller
-                          .getSelectionStyle()
-                          .containsKey(Attribute.bold.key);
-
-                      extra.controller.formatSelection(
-                        isBold
-                            ? Attribute.clone(Attribute.bold, null)
-                            : Attribute.bold,
-                      );
-
-                      _fieldFocusNode.requestFocus();
-                    },
-                    icon: Icon(
-                      Icons.format_bold,
-                      size: 17,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.all(
-                        extra.isToggled
-                            ? Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withOpacity(0.12)
-                            : Colors.transparent,
-                      ),
-                      padding: WidgetStateProperty.all(
-                        EdgeInsets.zero,
-                      ),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  );
-                },
-              ),
               base: QuillToolbarBaseButtonOptions(
                 iconSize: 17,
                 iconButtonFactor: 1.0,
@@ -3337,7 +3310,7 @@ class _RichStudyFieldState
             showBackgroundColorButton: true,
             showClearFormat: true,
 
-            showBoldButton: false,
+            showBoldButton: true,
             showItalicButton: true,
             showUnderLineButton: true,
             showStrikeThrough: true,
