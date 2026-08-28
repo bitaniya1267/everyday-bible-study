@@ -3041,6 +3041,7 @@ class _RichStudyFieldState
   bool _toolbarPointerDown = false;
   Timer? _hideToolbarTimer;
   Timer? _saveTimer;
+  TextSelection? _lastSelection;
 
   @override
   void initState() {
@@ -3063,6 +3064,10 @@ class _RichStudyFieldState
       ),
     );
 
+    _lastSelection = controller.selection;
+    controller.onSelectionChanged = (selection) {
+      _lastSelection = selection;
+    };
     controller.addListener(_changed);
   }
 
@@ -3205,6 +3210,57 @@ class _RichStudyFieldState
             // only on QuillSimpleToolbarConfig does not reliably override
             // the Material 3 selected-button background.
             buttonOptions: QuillSimpleToolbarButtonOptions(
+              bold: QuillToolbarToggleStyleButtonOptions(
+                iconSize: 17,
+                iconButtonFactor: 1.0,
+                childBuilder: (options, extra) {
+                  return IconButton(
+                    tooltip: 'Bold',
+                    onPressed: () {
+                      final selection =
+                          _lastSelection ?? extra.controller.selection;
+
+                      if (selection.start != selection.end) {
+                        extra.controller.updateSelection(
+                          selection,
+                          ChangeSource.local,
+                        );
+                      }
+
+                      final isBold = extra.controller
+                          .getSelectionStyle()
+                          .containsKey(Attribute.bold.key);
+
+                      extra.controller.formatSelection(
+                        isBold
+                            ? Attribute.clone(Attribute.bold, null)
+                            : Attribute.bold,
+                      );
+
+                      _fieldFocusNode.requestFocus();
+                    },
+                    icon: Icon(
+                      Icons.format_bold,
+                      size: 17,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.all(
+                        extra.isToggled
+                            ? Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.12)
+                            : Colors.transparent,
+                      ),
+                      padding: WidgetStateProperty.all(
+                        EdgeInsets.zero,
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  );
+                },
+              ),
               base: QuillToolbarBaseButtonOptions(
                 iconSize: 17,
                 iconButtonFactor: 1.0,
@@ -3281,7 +3337,7 @@ class _RichStudyFieldState
             showBackgroundColorButton: true,
             showClearFormat: true,
 
-            showBoldButton: true,
+            showBoldButton: false,
             showItalicButton: true,
             showUnderLineButton: true,
             showStrikeThrough: true,
