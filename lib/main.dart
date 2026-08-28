@@ -3185,6 +3185,10 @@ class _RichStudyFieldState
                     padding: EdgeInsets.zero,
                     visualDensity: VisualDensity.compact,
                     style: ButtonStyle(
+                      // Keep the selected formatting button compact so the
+                      // purple selection indicator cannot cover the icon.
+                      fixedSize: WidgetStateProperty.all(const Size(28, 28)),
+                      maximumSize: WidgetStateProperty.all(const Size(28, 28)),
                       backgroundColor: WidgetStateProperty.all(
                         Theme.of(context).colorScheme.primary.withOpacity(0.12),
                       ),
