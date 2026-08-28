@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -3039,6 +3040,8 @@ class _RichStudyFieldState
         }
       },
     );
+    // Explicitly keep every Study rich-text field editable on Android.
+    controller.readOnly = false;
 
     controller.addListener(_changed);
   }
@@ -3161,10 +3164,10 @@ class _RichStudyFieldState
 
     controller.removeListener(_changed);
     controller.dispose();
+    _editorScrollController.dispose();
 
     _fieldFocusNode.removeListener(_handleFocusChange);
     _fieldFocusNode.dispose();
-    _editorScrollController.dispose();
 
     super.dispose();
   }
@@ -3334,58 +3337,29 @@ class _RichStudyFieldState
                 if (_showFormattingToolbar)
                   _buildToolbar(context, isDark),
 
-                if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
-                  SizedBox(
-                    height: widget.maxLines * 30.0 + 24.0,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: QuillEditor.basic(
-                        controller: controller,
-                        focusNode: _fieldFocusNode,
-                        scrollController: _editorScrollController,
-                        config: QuillEditorConfig(
-                          placeholder: _showFormattingToolbar
-                              ? widget.hint
-                              : null,
-                          padding: EdgeInsets.zero,
-                          expands: false,
-                          autoFocus: false,
-                          scrollable: true,
-                          minHeight: widget.minLines * 20.0,
-                          maxHeight: widget.maxLines * 30.0,
-                          scrollPhysics: const ClampingScrollPhysics(),
-                          showCursor: true,
-                          enableInteractiveSelection: true,
-                          enableSelectionToolbar: true,
-                          onTapOutsideEnabled: false,
-                          onTapDown: (details, getPositionForOffset) {
-                            if (!_fieldFocusNode.hasFocus) {
-                              _fieldFocusNode.requestFocus();
-                            }
-                            return false;
-                          },
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  Container(
-                    constraints: BoxConstraints(
-                      minHeight: widget.minLines * 20.0,
-                      maxHeight: widget.maxLines * 30.0,
-                    ),
+                SizedBox(
+                  height: widget.maxLines * 30.0,
+                  child: Padding(
                     padding: const EdgeInsets.all(12),
-                    child: QuillEditor.basic(
+                    child: QuillEditor(
                       controller: controller,
                       focusNode: _fieldFocusNode,
+                      scrollController: _editorScrollController,
                       config: QuillEditorConfig(
-                        placeholder: _showFormattingToolbar
-                            ? widget.hint
-                            : null,
+                        // Keep the Android editor inside a real, bounded
+                        // viewport. This is important when the editor is
+                        // inside the Study page's outer ListView.
+                        minHeight: widget.minLines * 20.0,
+                        maxHeight: widget.maxLines * 30.0 - 24.0,
+                        placeholder:
+                            _showFormattingToolbar
+                                ? widget.hint
+                                : null,
                         padding: EdgeInsets.zero,
                         expands: false,
                         autoFocus: false,
                         scrollable: true,
+                        scrollPhysics: const ClampingScrollPhysics(),
                         showCursor: true,
                         enableInteractiveSelection: true,
                         enableSelectionToolbar: true,
@@ -3393,6 +3367,7 @@ class _RichStudyFieldState
                       ),
                     ),
                   ),
+                ),
               ],
             ),
           ),
