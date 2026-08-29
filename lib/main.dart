@@ -3198,53 +3198,36 @@ class _RichStudyFieldState
             // buttonOptions/base for their icon theme. Putting iconTheme
             // only on QuillSimpleToolbarConfig does not reliably override
             // the Material 3 selected-button background.
-            customButtons: [
-              QuillToolbarCustomButtonOptions(
-                icon: Icon(
-                  Icons.format_bold,
-                  size: 17,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                tooltip: 'Bold',
-                onPressed: () {
-                  final savedSelection = _lastTextSelection;
+            buttonOptions: QuillSimpleToolbarButtonOptions(
+              // Keep every toolbar button on its existing implementation.
+              // Only Bold gets a custom press handler so the Android text
+              // selection is restored immediately before Quill formats it.
+              bold: QuillToolbarToggleStyleButtonOptions(
+                childBuilder: (options, extraOptions) {
+                  return defaultToggleStyleButtonBuilder(
+                    context,
+                    Attribute.bold,
+                    Icons.format_bold,
+                    extraOptions.isToggled,
+                    () {
+                      final selection = _lastTextSelection;
+                      if (selection != null &&
+                          !selection.isCollapsed &&
+                          selection.end <= controller.document.length) {
+                        controller.updateSelection(
+                          selection,
+                          ChangeSource.local,
+                        );
+                      }
 
-                  if (savedSelection != null &&
-                      !savedSelection.isCollapsed &&
-                      savedSelection.start >= 0 &&
-                      savedSelection.end <= controller.document.length) {
-                    controller.updateSelection(
-                      savedSelection,
-                      ChangeSource.local,
-                    );
-                  }
-
-                  final selection = controller.selection;
-                  if (selection.isCollapsed ||
-                      selection.start < 0 ||
-                      selection.end > controller.document.length) {
-                    return;
-                  }
-
-                  final attributes =
-                      controller.getSelectionStyle().attributes;
-                  final boldIsOn =
-                      attributes.containsKey(Attribute.bold.key);
-
-                  controller.skipRequestKeyboard = true;
-                  controller.formatSelection(
-                    boldIsOn
-                        ? Attribute.clone(Attribute.bold, null)
-                        : Attribute.bold,
+                    },
+                    extraOptions.onPressed,
+                    options.iconSize ?? 17,
+                    options.iconButtonFactor ?? 1.0,
+                    options.iconTheme,
                   );
-                  controller.skipRequestKeyboard = false;
-
-                  _fieldFocusNode.requestFocus();
                 },
               ),
-            ],
-
-            buttonOptions: QuillSimpleToolbarButtonOptions(
               base: QuillToolbarBaseButtonOptions(
                 iconSize: 17,
                 iconButtonFactor: 1.0,
@@ -3321,11 +3304,7 @@ class _RichStudyFieldState
             showBackgroundColorButton: true,
             showClearFormat: true,
 
-            // The built-in Bold button can lose the selected range when the
-            // toolbar receives focus on Android. Keep the normal-looking B
-            // button hidden and provide a custom Bold action that restores
-            // the saved selection before formatting it.
-            showBoldButton: false,
+            showBoldButton: true,
             showItalicButton: true,
             showUnderLineButton: true,
             showStrikeThrough: true,
