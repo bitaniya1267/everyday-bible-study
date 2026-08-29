@@ -2161,11 +2161,12 @@ class _DashboardQuickActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 2),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
         child: Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: 3,
+          runSpacing: 2,
           children: [
             _quick(context, Icons.search, 'Search', onSearch),
             _quick(context, Icons.bookmark_border, 'Bookmarks', onBookmarks),
@@ -2180,7 +2181,17 @@ class _DashboardQuickActions extends StatelessWidget {
   }
 
   Widget _quick(BuildContext context, IconData icon, String label, VoidCallback onTap) {
-    return ActionChip(avatar: Icon(icon, size: 18), label: Text(label), onPressed: onTap);
+    return ActionChip(
+      avatar: Icon(icon, size: 15),
+      label: Text(
+        label,
+        style: const TextStyle(fontSize: 11.5),
+      ),
+      visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      onPressed: onTap,
+    );
   }
 }
 
@@ -3105,6 +3116,7 @@ class _RichStudyFieldState
 
   bool _showFormattingToolbar = false;
   bool _toolbarPointerDown = false;
+  TextSelection? _savedToolbarSelection;
   Timer? _hideToolbarTimer;
   Timer? _saveTimer;
 
@@ -3172,6 +3184,15 @@ class _RichStudyFieldState
     _hideToolbarTimer?.cancel();
     _toolbarPointerDown = true;
 
+    // Preserve a real text selection before the toolbar receives the
+    // pointer. This is especially important on Android, where the
+    // toolbar can cause the editor selection to collapse before the
+    // formatting action runs.
+    final selection = controller.selection;
+    if (selection.isValid && !selection.isCollapsed) {
+      _savedToolbarSelection = selection;
+    }
+
     if (mounted && !_showFormattingToolbar) {
       setState(() {
         _showFormattingToolbar = true;
@@ -3206,6 +3227,39 @@ class _RichStudyFieldState
   void _toolbarPointerCancelHandler(PointerCancelEvent event) {
     _toolbarPointerDown = false;
     _handleFocusChange();
+  }
+
+  void _applyBoldToSavedSelection() {
+    final selection = _savedToolbarSelection ?? controller.selection;
+
+    if (!selection.isValid || selection.isCollapsed) {
+      return;
+    }
+
+    final start = selection.start.clamp(0, controller.document.length - 1);
+    final end = selection.end.clamp(0, controller.document.length - 1);
+    final length = end - start;
+
+    if (length <= 0) return;
+
+    final selectionStyle = controller.getSelectionStyle();
+    final isBold = selectionStyle.attributes.containsKey(Attribute.bold.key);
+
+    controller.formatText(
+      start,
+      length,
+      isBold ? Attribute.clone(Attribute.bold, null) : Attribute.bold,
+    );
+
+    controller.updateSelection(
+      TextSelection(
+        baseOffset: selection.baseOffset.clamp(0, controller.document.length - 1),
+        extentOffset: selection.extentOffset.clamp(0, controller.document.length - 1),
+      ),
+      ChangeSource.local,
+    );
+
+    _fieldFocusNode.requestFocus();
   }
 
   void _changed() {
@@ -3271,6 +3325,21 @@ class _RichStudyFieldState
             // only on QuillSimpleToolbarConfig does not reliably override
             // the Material 3 selected-button background.
             buttonOptions: QuillSimpleToolbarButtonOptions(
+              bold: QuillToolbarToggleStyleButtonOptions(
+                childBuilder: (options, extraOptions) {
+                  return defaultToggleStyleButtonBuilder(
+                    extraOptions.context,
+                    Attribute.bold,
+                    Icons.format_bold,
+                    extraOptions.isToggled,
+                    _applyBoldToSavedSelection,
+                    options.afterButtonPressed,
+                    options.iconSize ?? 17,
+                    options.iconButtonFactor ?? 1.0,
+                    options.iconTheme,
+                  );
+                },
+              ),
               base: QuillToolbarBaseButtonOptions(
                 iconSize: 17,
                 iconButtonFactor: 1.0,
