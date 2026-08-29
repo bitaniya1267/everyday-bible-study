@@ -1392,32 +1392,52 @@ class _HomeScreenState extends State<HomeScreen> {
             delegate:
                 SliverChildListDelegate(
               [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _TopProgressItem(
-                        icon: Icons.menu_book,
-                        value: '$studyChapterCount',
-                      ),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
                     ),
-                    Container(
-                      height: 34,
-                      width: 1,
-                      color: Theme.of(
-                        context,
-                      )
-                          .colorScheme
-                          .outlineVariant,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _TopProgressItem(
+                            icon: Icons.calendar_month,
+                            value: '$studyDays',
+                            label: 'Study days',
+                          ),
+                        ),
+                        Container(
+                          height: 38,
+                          width: 1,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outlineVariant,
+                        ),
+                        Expanded(
+                          child: _TopProgressItem(
+                            icon: Icons.menu_book,
+                            value: '$studyChapterCount',
+                            label: 'Chapters',
+                          ),
+                        ),
+                        Container(
+                          height: 38,
+                          width: 1,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outlineVariant,
+                        ),
+                        Expanded(
+                          child: _TopProgressItem(
+                            icon: Icons.local_fire_department_outlined,
+                            value: '${calculateStudyStreak(widget.days)}',
+                            label: 'Streak',
+                          ),
+                        ),
+                      ],
                     ),
-                    Expanded(
-                      child: _TopProgressItem(
-                        icon:
-                            Icons.calendar_month,
-                        value:
-                            '$studyDays',
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
                 const SizedBox(height: 14),
                 _DashboardQuickActions(
@@ -1430,28 +1450,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   onExport: () => _showStudyExport(context),
                 ),
                 const SizedBox(height: 18),
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.local_fire_department_outlined),
-                    title: const Text('Study streak', style: TextStyle(fontWeight: FontWeight.w700)),
-                    subtitle: Text('${calculateStudyStreak(widget.days)} consecutive day${calculateStudyStreak(widget.days) == 1 ? '' : 's'}'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => StudyCalendarScreen(days: widget.days))),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Expanded(child: _StatMini(label: 'Study days', value: '$studyDays')),
-                        Expanded(child: _StatMini(label: 'Chapters', value: '$studyChapterCount')),
-                        Expanded(child: _StatMini(label: 'Streak', value: '${calculateStudyStreak(widget.days)}')),
-                      ],
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 12),
                 if (sorted.isNotEmpty)
                   Card(
@@ -1979,32 +1977,40 @@ class _TopProgressItem
     extends StatelessWidget {
   final IconData icon;
   final String value;
+  final String label;
 
   const _TopProgressItem({
     required this.icon,
     required this.value,
+    required this.label,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment:
-          MainAxisAlignment.center,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
           icon,
-          size: 25,
+          size: 22,
         ),
-        const SizedBox(
-          width: 8,
-        ),
+        const SizedBox(height: 3),
         Text(
           value,
-          style:
-              const TextStyle(
-            fontSize: 23,
-            fontWeight:
-                FontWeight.bold,
+          style: const TextStyle(
+            fontSize: 21,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 1),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context)
+                .colorScheme
+                .onSurfaceVariant,
           ),
         ),
       ],
