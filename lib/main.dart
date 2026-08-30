@@ -3039,6 +3039,12 @@ class _RichStudyFieldState
 
   bool _showFormattingToolbar = false;
   bool _toolbarPointerDown = false;
+
+  // Android can move/collapse the editor selection when a toolbar button
+  // receives the tap. Keep the user's real text selection so formatting
+  // buttons can apply to the selected text instead of the collapsed cursor.
+  TextSelection? _toolbarSelection;
+
   Timer? _hideToolbarTimer;
   Timer? _saveTimer;
 
@@ -3105,6 +3111,12 @@ class _RichStudyFieldState
   void _toolbarPointerDownHandler(PointerDownEvent event) {
     _hideToolbarTimer?.cancel();
     _toolbarPointerDown = true;
+
+    // Capture the selected range BEFORE the toolbar can steal focus.
+    final selection = controller.selection;
+    if (!selection.isCollapsed) {
+      _toolbarSelection = selection;
+    }
 
     if (mounted && !_showFormattingToolbar) {
       setState(() {
@@ -3205,6 +3217,40 @@ class _RichStudyFieldState
             // only on QuillSimpleToolbarConfig does not reliably override
             // the Material 3 selected-button background.
             buttonOptions: QuillSimpleToolbarButtonOptions(
+              bold: QuillToolbarToggleStyleButtonOptions(
+                afterButtonPressed: () {
+                  final savedSelection = _toolbarSelection;
+                  if (savedSelection == null ||
+                      savedSelection.isCollapsed ||
+                      !mounted) {
+                    return;
+                  }
+
+                  // Restore the exact text range that was selected before
+                  // Android moved focus to the toolbar.
+                  controller.updateSelection(
+                    savedSelection,
+                    ChangeSource.local,
+                  );
+
+                  final attributes =
+                      controller.getSelectionStyle().attributes;
+
+                  final shouldRemoveBold =
+                      attributes.containsKey(Attribute.bold.key);
+
+                  controller
+                    ..skipRequestKeyboard = true
+                    ..formatSelection(
+                      shouldRemoveBold
+                          ? Attribute.clone(Attribute.bold, null)
+                          : Attribute.bold,
+                    )
+                    ..skipRequestKeyboard = false;
+
+                  _toolbarSelection = savedSelection;
+                },
+              ),
               base: QuillToolbarBaseButtonOptions(
                 iconSize: 17,
                 iconButtonFactor: 1.0,
