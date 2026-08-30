@@ -1323,35 +1323,16 @@ class _HomeScreenState extends State<HomeScreen> {
               onSelected: (value) {
                 switch (value) {
                   case 'search':
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => StudySearchScreen(days: widget.days),
-                      ),
-                    );
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => StudySearchScreen(days: widget.days)));
                     break;
                   case 'calendar':
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => StudyCalendarScreen(days: widget.days),
-                      ),
-                    );
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => StudyCalendarScreen(days: widget.days)));
                     break;
                   case 'bookmarks':
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => StudyLibraryScreen(
-                          days: widget.days,
-                          favoritesOnly: false,
-                        ),
-                      ),
-                    );
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => StudyLibraryScreen(days: widget.days, favoritesOnly: false)));
                     break;
                   case 'characters':
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => CharacterLibraryScreen(days: widget.days),
-                      ),
-                    );
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => CharacterLibraryScreen(days: widget.days)));
                     break;
                   case 'favorites':
                     Navigator.of(context).push(
@@ -1374,35 +1355,19 @@ class _HomeScreenState extends State<HomeScreen> {
               itemBuilder: (_) => const [
                 PopupMenuItem(
                   value: 'search',
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.search),
-                    title: Text('Search studies'),
-                  ),
+                  child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.search), title: Text('Search studies')),
                 ),
                 PopupMenuItem(
                   value: 'calendar',
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.calendar_month_outlined),
-                    title: Text('Study calendar'),
-                  ),
+                  child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.calendar_month_outlined), title: Text('Study calendar')),
                 ),
                 PopupMenuItem(
                   value: 'bookmarks',
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.bookmark_border),
-                    title: Text('Bookmarks'),
-                  ),
+                  child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.bookmark_border), title: Text('Bookmarks')),
                 ),
                 PopupMenuItem(
                   value: 'characters',
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.person_outline),
-                    title: Text('Character library'),
-                  ),
+                  child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.person_outline), title: Text('Character library')),
                 ),
                 PopupMenuItem(
                   value: 'favorites',
@@ -2036,45 +2001,11 @@ class SettingsScreen
 }
 
 class _StatMini extends StatelessWidget {
-  final IconData icon;
   final String label;
   final String value;
-
-  const _StatMini({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
+  const _StatMini({required this.label, required this.value});
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          label,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Column(children: [Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)), const SizedBox(height: 3), Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant))]);
 }
 
 // ============================================================
@@ -3039,12 +2970,6 @@ class _RichStudyFieldState
 
   bool _showFormattingToolbar = false;
   bool _toolbarPointerDown = false;
-
-  // Android can move/collapse the editor selection when a toolbar button
-  // receives the tap. Keep the user's real text selection so formatting
-  // buttons can apply to the selected text instead of the collapsed cursor.
-  TextSelection? _toolbarSelection;
-
   Timer? _hideToolbarTimer;
   Timer? _saveTimer;
 
@@ -3111,12 +3036,6 @@ class _RichStudyFieldState
   void _toolbarPointerDownHandler(PointerDownEvent event) {
     _hideToolbarTimer?.cancel();
     _toolbarPointerDown = true;
-
-    // Capture the selected range BEFORE the toolbar can steal focus.
-    final selection = controller.selection;
-    if (!selection.isCollapsed) {
-      _toolbarSelection = selection;
-    }
 
     if (mounted && !_showFormattingToolbar) {
       setState(() {
@@ -3217,40 +3136,6 @@ class _RichStudyFieldState
             // only on QuillSimpleToolbarConfig does not reliably override
             // the Material 3 selected-button background.
             buttonOptions: QuillSimpleToolbarButtonOptions(
-              bold: QuillToolbarToggleStyleButtonOptions(
-                afterButtonPressed: () {
-                  final savedSelection = _toolbarSelection;
-                  if (savedSelection == null ||
-                      savedSelection.isCollapsed ||
-                      !mounted) {
-                    return;
-                  }
-
-                  // Restore the exact text range that was selected before
-                  // Android moved focus to the toolbar.
-                  controller.updateSelection(
-                    savedSelection,
-                    ChangeSource.local,
-                  );
-
-                  final attributes =
-                      controller.getSelectionStyle().attributes;
-
-                  final shouldRemoveBold =
-                      attributes.containsKey(Attribute.bold.key);
-
-                  controller
-                    ..skipRequestKeyboard = true
-                    ..formatSelection(
-                      shouldRemoveBold
-                          ? Attribute.clone(Attribute.bold, null)
-                          : Attribute.bold,
-                    )
-                    ..skipRequestKeyboard = false;
-
-                  _toolbarSelection = savedSelection;
-                },
-              ),
               base: QuillToolbarBaseButtonOptions(
                 iconSize: 17,
                 iconButtonFactor: 1.0,
@@ -3327,7 +3212,7 @@ class _RichStudyFieldState
             showBackgroundColorButton: true,
             showClearFormat: true,
 
-            showBoldButton: true,
+            showBoldButton: false,
             showItalicButton: true,
             showUnderLineButton: true,
             showStrikeThrough: true,
