@@ -792,7 +792,7 @@ class HomeScreen extends StatelessWidget {
                       child: Text(
                         'Reading progress',
                         style: TextStyle(
-                          fontWeight: FontWeight.w750,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
@@ -1113,7 +1113,7 @@ class _RecentStudyTile extends StatelessWidget {
       title: Text(
         refs.isEmpty ? 'Untitled study' : refs,
         style: const TextStyle(
-          fontWeight: FontWeight.w750,
+          fontWeight: FontWeight.w700,
         ),
       ),
       subtitle: Text(formatDate(day.date)),
@@ -2197,7 +2197,7 @@ class _TrackerScreenState
                 title: Text(
                   entry.key,
                   style: const TextStyle(
-                    fontWeight: FontWeight.w750,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 subtitle: Text(
@@ -2494,7 +2494,7 @@ class CharacterLibraryScreen
                           style:
                               const TextStyle(
                             fontWeight:
-                                FontWeight.w750,
+                                FontWeight.w700,
                           ),
                         ),
                         subtitle: Text(
@@ -2540,7 +2540,7 @@ class SettingsScreen extends StatelessWidget {
               title: const Text(
                 'Dark mode',
                 style: TextStyle(
-                  fontWeight: FontWeight.w750,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               subtitle: const Text(
@@ -2556,7 +2556,7 @@ class SettingsScreen extends StatelessWidget {
               title: const Text(
                 'Bitaniya Bible Study',
                 style: TextStyle(
-                  fontWeight: FontWeight.w750,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               subtitle:
