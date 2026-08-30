@@ -2970,6 +2970,7 @@ class _RichStudyFieldState
 
   bool _showFormattingToolbar = false;
   bool _toolbarPointerDown = false;
+  TextSelection? _savedFormattingSelection;
   Timer? _hideToolbarTimer;
   Timer? _saveTimer;
 
@@ -3011,6 +3012,10 @@ class _RichStudyFieldState
       return;
     }
 
+    // Persist the latest editor contents whenever focus leaves the field.
+    // This catches navigation, keyboard dismissal, and toolbar focus changes.
+    _flushAutoSave();
+
     // Quill's toolbar can briefly take focus on Web. Do not
     // immediately remove the toolbar while a formatting button
     // is being pressed.
@@ -3036,6 +3041,16 @@ class _RichStudyFieldState
   void _toolbarPointerDownHandler(PointerDownEvent event) {
     _hideToolbarTimer?.cancel();
     _toolbarPointerDown = true;
+
+    // Android can move/collapse the editor selection when the toolbar
+    // receives the touch. Save the selection before that happens so the
+    // Bold button can restore it before Quill formats the text.
+    final selection = controller.selection;
+    if (!selection.isCollapsed &&
+        selection.start >= 0 &&
+        selection.end <= controller.document.length) {
+      _savedFormattingSelection = selection;
+    }
 
     if (mounted && !_showFormattingToolbar) {
       setState(() {
@@ -3073,23 +3088,33 @@ class _RichStudyFieldState
     _handleFocusChange();
   }
 
-  void _changed() {
+  RichFieldValue _currentValue() {
     final plain = controller.document.toPlainText();
-    final value = RichFieldValue(
+    return RichFieldValue(
       plainText: plain.trimRight(),
-      richText: documentToJson(
-        controller.document,
-      ),
+      richText: documentToJson(controller.document),
     );
+  }
 
-    // Do not rebuild the entire ChapterCard on every single
-    // keystroke. That was causing the editor to freeze briefly
-    // and could also interrupt the formatting toolbar.
+  void _flushAutoSave() {
+    _saveTimer?.cancel();
+    _saveTimer = null;
+    widget.onChanged(_currentValue());
+  }
+
+  void _changed() {
+    final value = _currentValue();
+
+    // Auto-save shortly after every edit. The short debounce prevents a
+    // full parent rebuild on every keystroke while still saving continuously
+    // as the user types. Any pending edit is flushed when the field loses
+    // focus or is disposed, so leaving/backing out cannot lose the latest text.
     _saveTimer?.cancel();
     _saveTimer = Timer(
       const Duration(milliseconds: 350),
       () {
         if (!mounted) return;
+        _saveTimer = null;
         widget.onChanged(value);
       },
     );
@@ -3097,7 +3122,14 @@ class _RichStudyFieldState
 
   @override
   void dispose() {
-    _saveTimer?.cancel();
+    // Flush any edit that is still inside the debounce window before the
+    // editor disappears. This guarantees the last typed text is persisted.
+    if (_saveTimer != null) {
+      _saveTimer?.cancel();
+      _saveTimer = null;
+      widget.onChanged(_currentValue());
+    }
+
     _hideToolbarTimer?.cancel();
 
     controller.removeListener(_changed);
@@ -3136,6 +3168,35 @@ class _RichStudyFieldState
             // only on QuillSimpleToolbarConfig does not reliably override
             // the Material 3 selected-button background.
             buttonOptions: QuillSimpleToolbarButtonOptions(
+              bold: QuillToolbarToggleStyleButtonOptions(
+                childBuilder: (options, extraOptions) {
+                  final originalOnPressed = extraOptions.onPressed;
+                  return defaultToggleStyleButtonBuilder(
+                    extraOptions.context,
+                    Attribute.bold,
+                    options.iconData ?? Icons.format_bold,
+                    controller.getSelectionStyle().attributes.containsKey(Attribute.bold.key),
+                    originalOnPressed == null
+                        ? null
+                        : () {
+                            final saved = _savedFormattingSelection;
+                            if (saved != null &&
+                                saved.start >= 0 &&
+                                saved.end <= controller.document.length) {
+                              controller.updateSelection(
+                                saved,
+                                ChangeSource.local,
+                              );
+                            }
+                            originalOnPressed();
+                          },
+                    options.afterButtonPressed,
+                    options.iconSize ?? 17,
+                    options.iconButtonFactor ?? 1.0,
+                    options.iconTheme,
+                  );
+                },
+              ),
               base: QuillToolbarBaseButtonOptions(
                 iconSize: 17,
                 iconButtonFactor: 1.0,
@@ -3212,7 +3273,7 @@ class _RichStudyFieldState
             showBackgroundColorButton: true,
             showClearFormat: true,
 
-            showBoldButton: false,
+            showBoldButton: true,
             showItalicButton: true,
             showUnderLineButton: true,
             showStrikeThrough: true,
